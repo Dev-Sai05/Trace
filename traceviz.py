@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 traceviz.py - Streaming visualizer for mainframe / COBOL DBIO trace logs.
-Chronological Sequence, Nested Indentation, and Explicit Program Closures.
+Chronological Sequence & Nested Indentation Layout (Accurate Open Module Termination).
 """
 
 import argparse
@@ -26,7 +26,7 @@ RE_ERRTXT  = re.compile(r'error|abend|fail(?:ed|ure)?|exception', re.I)
 DEFAULT_FLUSH_SIZE   = 4000    
 DEFAULT_TAIL_KEEP    = 32      
 DEFAULT_MAX_CHILDREN = 4000    
-DEFAULT_MAX_PERIOD   = 8    
+DEFAULT_MAX_PERIOD   = 8       
 DEFAULT_MAX_DETAILS  = 20      
 
 
@@ -356,7 +356,7 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                     finished = stack.pop()
                     flush_frame(finished, max_period, stats, final=True, tail_keep=tail_keep)
                     stack[-1].buffer.append({'type': 'module', 'name': finished.name, 'children': finished.children})
-                    # Also write explicit closure node down timeline path
+                    # Re-instated explicit closure node only when matching log patterns are found
                     graph.add('module_end', f"END OF {finished.name}", len(stack) - 1, line_no=line_no)
                 else:
                     stats['unmatched_end'] += 1
@@ -411,17 +411,18 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                 stats['errors'] += 1
             frame.buffer.append(node)
 
+    # REMOVED: No more graph.add('module_end') inside this loop to preserve open paths accurately!
     while len(stack) > 1:
         finished = stack.pop()
         flush_frame(finished, max_period, stats, final=True, tail_keep=tail_keep)
         stack[-1].buffer.append({'type': 'module', 'name': finished.name + ' (unclosed)', 'children': finished.children})
-        graph.add('module_end', f"END OF {finished.name} (unclosed)", len(stack) - 1, line_no=line_no)
 
     flush_frame(root_frame, max_period, stats, final=True, tail_keep=tail_keep)
     
-    # Append final program termination block at the root baseline context
-    prog_id = header['program'] or "PROGRAM"
-    graph.add('program_end', f"END OF {prog_id}", 0, line_no=line_no)
+    # Check if program ended properly or aborted
+    if header.get('end_at'):
+        prog_id = header['program'] or "PROGRAM"
+        graph.add('program_end', f"END OF {prog_id}", 0, line_no=line_no)
 
     root = {'type': 'root', 'name': 'ROOT', 'children': root_frame.children}
     stats['elapsed'] = time.time() - t0
@@ -673,27 +674,31 @@ function applyView(){
   const canvas = document.getElementById('flowCanvas');
   canvas.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.scale})`;
 }
+// Removed window dimensions dependency so manual overflow scrolls take precedence 
 function resetView(){
-  view.scale = 0.9; view.x = 30; view.y = 30; applyView();
+  view.scale = 0.95; view.x = 30; view.y = 30; applyView();
 }
 function clampScale(s){ return Math.min(3, Math.max(0.15, s)); }
 
 (function setupPanZoom(){
   const wrap = document.getElementById('flowWrap');
   wrap.addEventListener('wheel', (e)=>{
-    e.preventDefault();
-    const rect = wrap.getBoundingClientRect();
-    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-    const newScale = clampScale(view.scale * (e.deltaY < 0 ? 1.05 : 0.95));
-    view.x = mx - (mx - view.x) * (newScale/view.scale);
-    view.y = my - (my - view.y) * (newScale/view.scale);
-    view.scale = newScale;
-    applyView();
+    // Scroll working cleanly downwards if track boundaries are exceeded
+    if(e.ctrlKey) {
+      e.preventDefault();
+      const rect = wrap.getBoundingClientRect();
+      const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+      const newScale = clampScale(view.scale * (e.deltaY < 0 ? 1.05 : 0.95));
+      view.x = mx - (mx - view.x) * (newScale/view.scale);
+      view.y = my - (my - view.y) * (newScale/view.scale);
+      view.scale = newScale;
+      applyView();
+    }
   }, {passive:false});
 
   let dragging = false, startX=0, startY=0, origX=0, origY=0;
   wrap.addEventListener('mousedown', (e)=>{
-    if(e.target.closest('.flowbox')) return;
+    if(e.target.closest('.flowbox') || wrap.scrollHeight > wrap.clientHeight) return;
     dragging = true; startX = e.clientX; startY = e.clientY; origX = view.x; origY = view.y;
   });
   window.addEventListener('mousemove', (e)=>{
