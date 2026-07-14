@@ -317,10 +317,6 @@ class StreamGraph:
 
 
 def compute_layout(graph_json, step_x=340, step_y=75, box_w=240, box_h=46):
-    """
-    Computes columns with wide layout channels (step_x) to permit clean
-    orthogonal line drops between module swimlanes.
-    """
     nodes = {n['key']: n for n in graph_json['nodes']}
     
     for key, n in nodes.items():
@@ -506,7 +502,7 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
 
 
 # ---------------------------------------------------------------------------
-# HTML generation
+# HTML generation template
 # ---------------------------------------------------------------------------
 HTML_TEMPLATE = r'''<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><title>TRACEVIEW // __PROGRAM__</title>
@@ -577,7 +573,9 @@ body.hide-explain .explain{display:none;}
       <button class="tabbtn" id="tabFlowBtn">Vertical Flow Diagram</button>
     </div>
 
-    <div class="flow" id="flow"></div>
+    <div class="view active" id="viewTree">
+      <div class="flow" id="flow"></div>
+    </div>
 
     <div class="view" id="viewFlow">
       <div class="crumbs" id="crumbs"></div>
@@ -663,7 +661,6 @@ function drawEdges(){
   const defs = document.createElementNS(NS,'defs');
   ['ERROR','CALL','LOOP','NEXT'].forEach(kind=>{
     const color = kind==='NEXT' ? edgeColor('') : edgeColor(kind);
-    // Orient horizontal marker arrows safely for clean side entries
     defs.innerHTML += `<marker id="arrow-${kind}" markerWidth="9" markerHeight="9" refX="5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="${color}"/></marker>`;
   });
   svg.appendChild(defs);
@@ -677,23 +674,19 @@ function drawEdges(){
     let d;
 
     if(a.key === b.key){
-      // Self repeating loops
       const x = a.x+OFF_X+bw, y = a.y+OFF_Y+bh/2;
       d = `M ${x} ${y-8} C ${x+24} ${y-15}, ${x+24} ${y+15}, ${x} ${y+8}`;
     } else if(a.layer === b.layer){
-      // Straight sequence steps inside the exact same column
       const x = a.x+OFF_X+bw/2;
       d = `M ${x} ${a.y+OFF_Y+bh} L ${x} ${b.y+OFF_Y}`;
     } else {
-      // Orthogonal Routing: Exits box horizontally, drops through channel space, enters target horizontally
+      // Orthogonal Lane Drop Routing Strategy
       const xStart = (b.layer > a.layer) ? (a.x + OFF_X + bw) : (a.x + OFF_X);
       const yStart = a.y + OFF_Y + bh / 2;
       const xEnd = (b.layer > a.layer) ? (b.x + OFF_X) : (b.x + OFF_X + bw);
       const yEnd = b.y + OFF_Y + bh / 2;
       
-      // Determine vertical drop mid-point alignment inside the lane gap space
       const midX = xStart + (xEnd - xStart) * 0.45;
-      
       d = `M ${xStart} ${yStart} H ${midX} V ${yEnd} H ${xEnd}`;
     }
     path.setAttribute('d', d);
