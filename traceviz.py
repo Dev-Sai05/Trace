@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 traceviz.py - Streaming visualizer for mainframe / COBOL DBIO trace logs.
-Vertical Swimlane Layout with Orthogonal Channel Routing (Fixed Tab View wrappers).
+Fully Restored Edition - Reinstates original metrics panel, tree logic, and narrative summaries.
 """
 
 import argparse
@@ -151,16 +151,16 @@ GLOSSARY = [
     (r'ROLLBACK',              'Undoing uncommitted database changes.'),
     (r'INITIALI[SZ]E|^INIT',   'One-time setup for this routine (work areas, counters, defaults).'),
     (r'VALIDATE',              'Checking that input values are valid before continuing.'),
-    (r'RETRIEVE',              'Pulling a control block or configuration value.'),
+    (r'RETRIEVE',              'Pulling a control block or configuration value (often from shared memory or the DB).'),
     (r'ATTACH-SHMEM',          'Attaching to a shared-memory segment used for cross-process control blocks.'),
     (r'SHMEM',                 'Working with a shared-memory segment.'),
     (r'ENV-VAR',               'Reading an operating-system environment variable.'),
-    (r'TRANSLATE-STATUS',      "Converting the database driver's raw return code."),
+    (r'TRANSLATE-STATUS',      "Converting the database driver's raw return code into the application's own status code."),
     (r'EVALUATE-FILE-NAME',    'Working out which physical file or table this request applies to.'),
     (r'PROCESS-RECORD',        'Doing the per-row work on the record that was just fetched.'),
     (r'GET-DATE',              'Reading the current system date/time.'),
     (r'GET-SYSTEM-NO',         'Determining which system/instance number this run is executing under.'),
-    (r'SET-APPLICATION-NAME',  'Tagging this DB session with an application name.'),
+    (r'SET-APPLICATION-NAME',  'Tagging this DB session with an application name (helps DBA-side tracing).'),
     (r'SETTXCON|TXCON',        'Setting up transaction/connection context for subsequent SQL calls.'),
     (r'DISPLAY',               'Writing a trace/debug line — diagnostic output, not business logic.'),
     (r'FINALISE|FINALIZE',     'Tearing down / releasing resources this routine acquired.'),
@@ -172,8 +172,8 @@ GLOSSARY = [
 GLOSSARY = [(re.compile(pat, re.I), text) for pat, text in GLOSSARY]
 
 MODULE_HINTS = [
-    (re.compile(r'^UT\d', re.I), 'Naming suggests a shared utility routine.'),
-    (re.compile(r'^DBIO', re.I), 'Naming suggests this is the DBIO layer that mediates SQL calls.'),
+    (re.compile(r'^UT\d', re.I), 'Naming suggests a shared utility routine, commonly reused across programs for housekeeping tasks (shared-memory access, trace output, etc).'),
+    (re.compile(r'^DBIO', re.I), 'Naming suggests this is the DBIO (database I/O) layer that mediates SQL calls on behalf of the caller.'),
     (re.compile(r'^IOMISC', re.I), 'Naming suggests a miscellaneous I/O helper module.'),
 ]
 
@@ -194,19 +194,22 @@ def explain_module(name):
     for pat, text in MODULE_HINTS:
         if pat.search(name):
             return text
-    return 'Custom site paragraph logic execution step.'
+    return 'Custom/site-specific routine — exact business purpose can\'t be inferred from the trace alone.'
 
 
 def explain_error_message(message):
     m = re.search(r'CURSOR FETCH ERROR\.?0*(\d+)', message, re.I)
     if m:
         code = m.group(1)
-        return f'A cursor FETCH failed. Underlying SQLCODE/return code: {code}.'
+        return (f'A cursor FETCH failed. The trailing digits ({code}) typically carry the underlying '
+                 'database SQLCODE/return code from the driver — check your DBMS\'s SQLCODE reference for the '
+                 'exact meaning. Common causes at this point are end-of-cursor handling, a lock/timeout, or a '
+                 'data conversion problem on one specific row.')
     if re.search(r'ABEND', message, re.I):
-        return 'The program terminated abnormally (an ABEND).'
+        return 'The program terminated abnormally (an ABEND) — check the accompanying system dump/message for the abend code.'
     if re.search(r'TIMEOUT|TIME OUT', message, re.I):
-        return 'The operation exceeded its allotted time window.'
-    return 'An error condition was reported here.'
+        return 'The operation exceeded its allotted time and was aborted by the DB or middleware.'
+    return 'An error condition was reported here — see the raw message for the driver-specific detail.'
 
 
 def annotate_tree(node):
@@ -216,6 +219,9 @@ def annotate_tree(node):
         for c in node['children']:
             annotate_tree(c)
     elif t == 'loop':
+        sample_names = ', '.join(c.get('name') or c.get('para') or c['type'] for c in node['children'])
+        node['explain'] = (f'This block of {node["period"]} step(s) — {sample_names} — repeated '
+                            f'{node["count"]} times in a row, typical of row-by-row cursor processing.')
         for c in node['children']:
             annotate_tree(c)
     elif t == 'step':
@@ -242,15 +248,46 @@ def _walk_order(node, statuses, loops):
 def build_narrative(root, header, stats, error_index):
     statuses, loops = [], []
     _walk_order(root, statuses, loops)
+
     sentences = []
     prog = header.get('program') or 'The program'
     sentences.append(f"{prog} started at {header.get('start_at') or 'an unknown time'}.")
+
+    for s in statuses:
+        if s['cls'] == 'error':
+            continue
+        if re.search(r'LOGON', s['para'], re.I) or re.search(r'LOGON', s['message'], re.I):
+            sentences.append(f"It {'successfully logged on to the database' if s['cls']=='success' else 'attempted to log on to the database'} ({s['message']}).")
+        elif re.search(r'SIGN[-_]?OFF', s['para'], re.I):
+            sentences.append(f"It signed off from the database at the end ({s['message']}).")
+        elif re.search(r'COMMIT', s['message'], re.I):
+            sentences.append("It committed its database changes.")
+
+    big_loop = max(loops, key=lambda l: l['count']) if loops else None
+    if big_loop:
+        names = ', '.join(c.get('name') or c.get('para') or c['type'] for c in big_loop['children'])
+        sentences.append(f"It looped {big_loop['count']} times through ({names}) — a row-by-row cursor "
+                          f"fetch/process pattern — collapsing what would have been "
+                          f"{(big_loop['count']-1)*big_loop['period']:,} additional lines in the raw trace.")
+
     if error_index:
         first = error_index[0]
-        sentences.append(f"On line {first['line']}, an anomaly occurred: \"{first['message']}\"")
+        sentences.append(f"On line {first['line']}, something went wrong: \"{first['message']}\"" +
+                          (f" (paragraph {first['para']})." if first.get('para') else "."))
+        sentences.append(explain_error_message(first['message']))
+        if len(error_index) > 1:
+            sentences.append(f"In total, {len(error_index)} error condition(s) were found in this trace.")
+
     rc = header.get('rc')
     if rc is not None:
-        sentences.append(f"The job completed with return code {rc}.")
+        try:
+            rc_int = int(rc)
+        except ValueError:
+            rc_int = None
+        if rc_int == 0:
+            sentences.append("The job completed with return code 0 (normal completion).")
+        elif rc_int is not None:
+            sentences.append(f"The job ended with return code {rc}. A non-zero return code generally signals an abnormal completion.")
     return ' '.join(sentences)
 
 
@@ -270,7 +307,12 @@ class StreamGraph:
             if len(self.nodes) >= self.max_nodes:
                 self.truncated = True
                 return None
-            explain = explain_error_message(message) if (error and message) else (explain_module(label) if kind == 'module' else explain_text(label, message))
+            if error and message:
+                explain = explain_error_message(message)
+            elif kind == 'module':
+                explain = explain_module(label)
+            else:
+                explain = explain_text(label, message)
             node = {'kind': kind, 'label': label, 'error': error, 'count': 0,
                      'messages': Counter(), 'first_line': line_no, 'explain': explain}
             self.nodes[key] = node
@@ -502,7 +544,7 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
 
 
 # ---------------------------------------------------------------------------
-# HTML generation template
+# Full Original HTML Template Config (Restoring Early Layout Panel)
 # ---------------------------------------------------------------------------
 HTML_TEMPLATE = r'''<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><title>TRACEVIEW // __PROGRAM__</title>
@@ -510,82 +552,137 @@ HTML_TEMPLATE = r'''<!DOCTYPE html>
 :root{--bg:#080b08;--panel:#0e140f;--panel2:#101a12;--line:#1c2b1e;--green:#4dff88;--green-dim:#7fb894;
 --cyan:#6fd7e8;--amber:#ffb347;--red:#ff5c5c;--gray:#5c6b60;--text:#c9e6d2;}
 *{box-sizing:border-box;}
-html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospace,"SF Mono",monospace;font-size:13px;}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,monospace;font-size:13px;}
 .wrap{display:flex;min-height:100vh;}
 .sidebar{width:340px;flex:0 0 340px;background:var(--panel);border-right:1px solid var(--line);padding:18px;position:sticky;top:0;height:100vh;overflow-y:auto;}
-.brand .t2{font-size:20px;color:var(--green);font-weight:700;margin-bottom:14px;}
+.brand .t1{font-size:11px;letter-spacing:3px;color:var(--gray);text-transform:uppercase;}
+.brand .t2{font-size:20px;color:var(--green);font-weight:700;letter-spacing:1px;margin-bottom:14px;}
 .stat{display:flex;justify-content:space-between;padding:5px 0;font-size:11px;border-bottom:1px dashed var(--line);}
-.stat .k{color:var(--gray);text-transform:uppercase;font-size:10px;}
+.stat .k{color:var(--gray);text-transform:uppercase;letter-spacing:1px;font-size:10px;}
+.stat .v{color:var(--text);font-weight:600;}
+.stat.bad .v{color:var(--red);} .stat.ok .v{color:var(--green);}
 .errbox{margin-top:16px;border-top:1px solid var(--line);padding-top:10px;}
+.errbox h3{font-size:11px;letter-spacing:2px;color:var(--red);text-transform:uppercase;margin:0 0 8px;}
+.erritem{font-size:10.5px;color:var(--red);padding:4px 0;border-bottom:1px dashed rgba(255,92,92,0.2);}
+.erritem .ln{color:var(--gray);}
 .main{flex:1;padding:24px 30px;overflow-x:auto;}
 .headerbar h1{font-size:15px;margin:0 0 4px;}
 .headerbar .sub{font-size:11px;color:var(--gray);}
 .node{position:relative;margin:6px 0;}
 .children{margin-left:20px;padding-left:18px;border-left:2px solid var(--line);margin-top:6px;}
 .row{display:flex;align-items:flex-start;gap:8px;padding:5px 10px;border-radius:4px;}
-.row .tag{font-size:9px;padding:1px 5px;border-radius:3px;flex:0 0 auto;}
-.step .tag{color:var(--cyan);border:1px solid rgba(111,215,232,.25);}
+.row .tag{font-size:9px;padding:1px 5px;border-radius:3px;letter-spacing:1px;flex:0 0 auto;margin-top:1px;}
+.step .tag{background:rgba(111,215,232,.08);color:var(--cyan);border:1px solid rgba(111,215,232,.25);}
 .status.success .row{color:var(--green);}
-.status.error .row,.step.error .row{color:var(--red);background:rgba(255,92,92,.08);border:1px solid rgba(255,92,92,.4);}
-.module>.head,.loop>.head{display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 10px;border-radius:5px;}
+.status.success .tag{background:rgba(77,255,136,.1);color:var(--green);border:1px solid rgba(77,255,136,.3);}
+.status.neutral .tag{background:rgba(140,140,140,.08);color:var(--gray);border:1px solid var(--line);}
+.status.error .row,.step.error .row,.raw.error .row,.info.error .row{color:var(--red);background:rgba(255,92,92,.08);border:1px solid rgba(255,92,92,.4);box-shadow:0 0 10px rgba(255,92,92,.15);}
+.status.error .tag{background:rgba(255,92,92,.15);color:var(--red);border:1px solid var(--red);}
+.info .row{color:var(--green-dim);font-style:italic;font-size:12px;}
+.raw .row{color:var(--gray);font-size:11px;}
+.module>.head,.loop>.head{display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 10px;border-radius:5px;user-select:none;}
 .module>.head{color:var(--cyan);background:rgba(111,215,232,.05);border:1px solid rgba(111,215,232,.25);}
 .loop>.head{color:var(--amber);background:rgba(255,179,71,.06);border:1px dashed rgba(255,179,71,.45);}
+.module>.head .badge,.loop>.head .badge{margin-left:auto;font-size:10px;color:var(--gray);}
 .caret{width:10px;display:inline-block;transition:transform .15s;}
 .module.collapsed>.children,.loop.collapsed>.children{display:none;}
 .module.collapsed>.head .caret,.loop.collapsed>.head .caret{transform:rotate(-90deg);}
-.explain{margin:2px 0 4px 26px;font-size:11px;color:var(--gray);font-style:italic;}
-body.hide-explain .explain{display:none;}
-.narrative{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:5px;padding:14px 16px;margin-bottom:16px;}
+.loop>.children{border-left:2px dashed rgba(255,179,71,.35);}
+.sample-label{font-size:10px;color:var(--gray);margin:4px 0 0 20px;letter-spacing:1px;text-transform:uppercase;}
+.msgsum{font-size:10px;color:var(--gray);margin:4px 0 0 20px;}
+.detail{margin:2px 0 2px 26px;font-size:11px;color:var(--green-dim);opacity:.85;}
+.detail .ts{color:var(--gray);margin-right:8px;}
+.omitted .row{color:var(--gray);font-style:italic;border:1px dashed var(--line);}
+.explain{margin:2px 0 4px 26px;font-size:11px;color:var(--gray);font-style:italic;opacity:.9;}
+.explain::before{content:'\203a ';color:var(--gray);}
+.mod-explain{font-size:10.5px;color:var(--gray);font-style:italic;margin:4px 0 0 20px;}
+body.hide-explain .explain,body.hide-explain .mod-explain{display:none;}
+.narrative{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:5px;padding:14px 16px;margin-bottom:16px;font-size:12.5px;line-height:1.6;color:var(--text);}
+.narrative h3{margin:0 0 8px;font-size:11px;letter-spacing:2px;color:var(--green);text-transform:uppercase;}
+button{background:var(--panel2);color:var(--green);border:1px solid var(--line);border-radius:4px;padding:6px 9px;font-family:inherit;font-size:11px;cursor:pointer;margin:2px 4px 8px 0;}
+button:hover{border-color:var(--green);}
+button.toggled{color:var(--amber);border-color:var(--amber);}
+
 .tabs{display:flex;gap:6px;margin-bottom:14px;}
-.tabbtn{background:var(--panel2);color:var(--gray);border:1px solid var(--line);border-radius:5px 5px 0 0;padding:8px 16px;cursor:pointer;}
-.tabbtn.active{color:var(--green);background:var(--panel);border-bottom:2px solid var(--bg);}
+.tabbtn{background:var(--panel2);color:var(--gray);border:1px solid var(--line);border-radius:5px 5px 0 0;padding:8px 16px;font-family:inherit;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
+.tabbtn.active{color:var(--green);border-color:var(--green);border-bottom:2px solid var(--bg);background:var(--panel);}
 .view{display:none;} .view.active{display:block;}
+
 .crumbs{font-size:11px;color:var(--gray);margin-bottom:14px;padding:8px 10px;background:var(--panel);border:1px solid var(--line);border-radius:5px;}
+.crumbs span.crumb{cursor:pointer;color:var(--cyan);} .crumbs span.crumb:hover{text-decoration:underline;}
+.crumbs .sep{color:var(--gray);margin:0 6px;}
 
 .flowcols{display:flex;gap:20px;align-items:flex-start;}
 .flowdiagram{flex:1;min-width:0;}
-.canvas-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:11px;}
-.flow-canvas-wrap{position:relative;height:75vh;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--bg);cursor:grab;}
+.canvas-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:11px;color:var(--gray);}
+.canvas-toolbar button{margin:0;padding:5px 10px;}
+.canvas-toolbar .zoomlabel{color:var(--text);min-width:44px;text-align:center;}
+.canvas-toolbar .hint{margin-left:auto;color:var(--gray);font-style:italic;}
+.flow-canvas-wrap{position:relative;height:70vh;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);background-size:22px 22px;cursor:grab;}
 .flow-canvas-wrap.dragging{cursor:grabbing;}
 .flow-canvas{position:absolute;top:0;left:0;transform-origin:0 0;}
 .connectors{position:absolute;top:0;left:0;pointer-events:none;overflow:visible;}
-.flowbox{position:absolute;border:1.5px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer;background:var(--panel2);display:flex;align-items:center;gap:8px;box-sizing:border-box;}
+.flowbox{position:absolute;border:1.5px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer;background:var(--panel2);display:flex;align-items:center;gap:8px;transition:box-shadow .1s,border-color .1s;box-sizing:border-box;overflow:hidden;}
 .flowbox:hover{box-shadow:0 0 0 1px var(--green);z-index:5;}
+.flowbox.active-hover{box-shadow:0 0 0 2px var(--green);z-index:5;}
 .flowbox .lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;}
 .flowbox.t-module{border-color:rgba(111,215,232,.5);color:var(--cyan);background:rgba(111,215,232,.05);}
+.flowbox.t-step{color:var(--text);}
 .flowbox.t-status-success{color:var(--green);border-color:rgba(77,255,136,.35);}
+.flowbox.t-status-neutral{color:var(--gray);}
 .flowbox.t-error{color:var(--red);border-color:var(--red);box-shadow:0 0 10px rgba(255,92,92,.15);}
-.logpreview{flex:0 0 380px;position:sticky;top:18px;background:#050705;border:1px solid var(--line);border-radius:6px;padding:12px;font-size:11px;max-height:80vh;overflow:auto;}
-.logpreview h4{margin:0 0 8px;color:var(--green);text-transform:uppercase;}
+.flowbox .count-badge{flex:0 0 auto;font-size:9px;color:var(--gray);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:1px 6px;}
+.flowbox .shape-icon{flex:0 0 auto;font-size:11px;opacity:.8;}
+.flow-empty{color:var(--gray);text-align:center;padding:30px;font-style:italic;}
+.flow-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:10.5px;color:var(--gray);margin-bottom:10px;padding:8px 10px;border:1px solid var(--line);border-radius:5px;background:var(--panel);}
+.flow-legend .lg{display:flex;align-items:center;gap:5px;}
+.flow-legend .sw{width:10px;height:10px;border-radius:2px;display:inline-block;}
+
+.logpreview{flex:0 0 380px;position:sticky;top:18px;background:#050705;border:1px solid var(--line);border-radius:6px;padding:12px;font-size:11px;color:var(--green-dim);white-space:pre-wrap;word-break:break-word;max-height:80vh;overflow:auto;}
+.logpreview h4{margin:0 0 8px;font-size:10px;letter-spacing:2px;color:var(--green);text-transform:uppercase;}
+.logpreview .lp-empty{color:var(--gray);font-style:italic;}
+.logpreview .lp-name{color:var(--cyan);margin-bottom:6px;display:block;}
 </style></head>
 <body>
 <div class="wrap">
   <div class="sidebar">
-    <div class="brand"><div class="t2">TRACEVIEW REPORT</div></div>
+    <div class="brand"><div class="t1">TRACEVIEW</div><div class="t2">FLOW REPORT</div></div>
     <div id="stats"></div>
     <div class="errbox" id="errbox"></div>
   </div>
   <div class="main">
     <div class="headerbar"><h1 id="ht"></h1><div class="sub" id="hs"></div></div>
-    <div class="narrative" id="narrative"><h3>Execution Narrative</h3><div id="narrativeText"></div></div>
+    <div class="narrative" id="narrative"><h3>What Happened</h3><div id="narrativeText"></div></div>
     <div class="tabs">
       <button class="tabbtn active" id="tabTreeBtn">Tree View</button>
       <button class="tabbtn" id="tabFlowBtn">Vertical Flow Diagram</button>
     </div>
 
     <div class="view active" id="viewTree">
+      <div>
+        <button onclick="document.querySelectorAll('.module.collapsed,.loop.collapsed').forEach(n=>n.classList.remove('collapsed'))">Expand all</button>
+        <button onclick="document.querySelectorAll('.module,.loop').forEach(n=>n.classList.add('collapsed'))">Collapse all</button>
+        <button id="explainToggle">Hide explanations</button>
+      </div>
       <div class="flow" id="flow"></div>
     </div>
 
     <div class="view" id="viewFlow">
       <div class="crumbs" id="crumbs"></div>
+      <div class="flow-legend">
+        <span class="lg"><span class="sw" style="background:var(--cyan)"></span>Call (module entry)</span>
+        <span class="lg"><span class="sw" style="background:var(--amber)"></span>Loop-back edge</span>
+        <span class="lg"><span class="sw" style="background:var(--red)"></span>Error branch</span>
+        <span class="lg"><span class="sw" style="background:#7fb894"></span>Normal sequence</span>
+      </div>
       <div class="flowcols">
         <div class="flowdiagram">
           <div class="canvas-toolbar">
             <button id="zoomOutBtn">\u2212</button>
-            <span id="zoomLabel">100%</span>
+            <span class="zoomlabel" id="zoomLabel">100%</span>
             <button id="zoomInBtn">+</button>
             <button id="zoomResetBtn">Reset view</button>
+            <span class="hint">Scroll to zoom &middot; Drag to pan</span>
           </div>
           <div class="flow-canvas-wrap" id="flowWrap">
             <div class="flow-canvas" id="flowCanvas">
@@ -594,54 +691,127 @@ body.hide-explain .explain{display:none;}
           </div>
         </div>
         <div class="logpreview" id="logPreview">
-          <h4>Execution Context</h4>
-          <div id="lp-body">Hover or select a vertical pipeline box to parse log fragments.</div>
+          <h4>Log Preview</h4>
+          <div class="lp-empty">Hover or tap a block to see the log lines behind it.</div>
         </div>
       </div>
     </div>
+
   </div>
 </div>
 <script>
 const DATA = __DATA_JSON__;
+
 function esc(s){return (s+'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function el(tag,cls,html){const e=document.createElement(tag); if(cls)e.className=cls; if(html!==undefined)e.innerHTML=html; return e;}
+
+function renderDetails(node){
+  const frag = document.createDocumentFragment();
+  (node.details||[]).forEach(d=>frag.appendChild(el('div','detail',`<span class="ts">${esc(d.ts)}</span>${esc(d.msg)}`)));
+  return frag;
+}
+
+function renderExplain(node){
+  return node.explain ? el('div','explain', esc(node.explain)) : null;
+}
 
 function renderNode(node){
   if(node.type==='module'){
     const wrap = el('div','node module collapsed');
-    const head = el('div','head', `<span>\u25be CALL \u203a ${esc(node.name)}</span>`);
+    const head = el('div','head', `<span class="caret">\u25be</span><span>CALL \u203a ${esc(node.name)}</span><span class="badge">${node.children.length} item${node.children.length===1?'':'s'}</span>`);
     head.addEventListener('click',()=>wrap.classList.toggle('collapsed'));
     const kids = el('div','children');
+    if(node.explain) kids.appendChild(el('div','mod-explain', esc(node.explain)));
     node.children.forEach(c=>kids.appendChild(renderNode(c)));
+    wrap.appendChild(head); wrap.appendChild(kids); return wrap;
+  }
+  if(node.type==='loop'){
+    const wrap = el('div','node loop collapsed');
+    const head = el('div','head', `<span class="caret">\u25be</span><span>LOOP \u00d7${node.count}</span><span class="badge">period ${node.period} \u00b7 ${(node.count-1)*node.period} collapsed</span>`);
+    head.addEventListener('click',()=>wrap.classList.toggle('collapsed'));
+    const kids = el('div','children');
+    if(node.explain) kids.appendChild(el('div','mod-explain', esc(node.explain)));
+    kids.appendChild(el('div','sample-label','Sample iteration \u2193'));
+    node.children.forEach(c=>kids.appendChild(renderNode(c)));
+    if(node.message_summary && node.message_summary.length){
+      const s = node.message_summary.map(m=>`${esc(m[0])} \u00d7${m[1]}`).join('; ');
+      kids.appendChild(el('div','msgsum','Messages seen across loop: '+s));
+    }
     wrap.appendChild(head); wrap.appendChild(kids); return wrap;
   }
   if(node.type==='step'){
     const wrap = el('div','node step'+(node.error?' error':''));
     wrap.appendChild(el('div','row',`<span class="tag">PARA</span><span>${esc(node.name)}</span>`));
-    return wrap;
+    const ex = renderExplain(node); if(ex) wrap.appendChild(ex);
+    wrap.appendChild(renderDetails(node)); return wrap;
   }
   if(node.type==='status'){
     const wrap = el('div','node status '+node.cls);
-    wrap.appendChild(el('div','row',`<span class="tag">STATUS</span><span>${esc(node.program)}(${esc(node.para)}) — ${esc(node.message)}</span>`));
+    const tag = node.cls==='error'?'ERROR':(node.cls==='success'?'OK':'STATUS');
+    wrap.appendChild(el('div','row',`<span class="tag">${tag}</span><span>${esc(node.program)}(${esc(node.para)}) \u2014 ${esc(node.message)}</span>`));
+    const ex = renderExplain(node); if(ex) wrap.appendChild(ex);
+    wrap.appendChild(renderDetails(node)); return wrap;
+  }
+  if(node.type==='info'){
+    const wrap = el('div','node info'+(node.error?' error':''));
+    wrap.appendChild(renderDetails(node)); return wrap;
+  }
+  if(node.type==='omitted'){
+    const wrap = el('div','node omitted');
+    wrap.appendChild(el('div','row', `\u2026 ${node.count} steps omitted from view` + (node.errors? ` (includes ${node.errors} error${node.errors===1?'':'s'} \u2014 see Error Index)`:'') + ' \u2026'));
     return wrap;
   }
-  return el('div','node raw',esc(node.text||''));
+  const wrap = el('div','node raw'+(node.error?' error':''));
+  wrap.appendChild(el('div','row',esc(node.text))); return wrap;
 }
 
-document.getElementById('ht').textContent = (DATA.header.program? 'PROGRAM '+DATA.header.program : 'TRACE LOG EXECUTION');
+document.getElementById('ht').textContent = (DATA.header.program? 'PROGRAM '+DATA.header.program : 'TRACE') + ' \u2014 Execution Flow';
 document.getElementById('hs').textContent = (DATA.header.start_at||'?') + '  \u2192  ' + (DATA.header.end_at||'?');
 document.getElementById('narrativeText').textContent = DATA.narrative || '';
+
+document.getElementById('explainToggle').addEventListener('click', (e)=>{
+  document.body.classList.toggle('hide-explain');
+  e.target.textContent = document.body.classList.contains('hide-explain') ? 'Show explanations' : 'Hide explanations';
+  e.target.classList.toggle('toggled');
+});
 
 const GRAPH = DATA.graph || {nodes:[], edges:[], width:0, height:0, box_w:240, box_h:46};
 const OFF_X = 60, OFF_Y = 50;
 const nodeByKey = {};
 GRAPH.nodes.forEach(n => nodeByKey[n.key] = n);
 
+document.getElementById('crumbs').textContent =
+  `${GRAPH.nodes.length} distinct paragraph/status node${GRAPH.nodes.length===1?'':'s'} \u00b7 ` +
+  `${GRAPH.edges.length} transition${GRAPH.edges.length===1?'':'s'} observed`;
+
+function shapeIconFor(n){
+  if(n.kind==='module') return '\u25b8';
+  if(n.error) return '\u25c6';
+  if(n.kind==='status') return '\u25cf';
+  return '\u25ab';
+}
+function boxClassFor(n){
+  if(n.error) return 't-error';
+  if(n.kind==='module') return 't-module';
+  if(n.kind==='status') return n.label && /success|good|complet|commit/i.test((n.messages[0]||[''])[0]) ? 't-status-success' : 't-status-neutral';
+  return 't-step';
+}
 function labelFor(n){ return (n.kind==='module' ? 'CALL \u203a ' : '') + n.label; }
 
 function showLogPreview(n){
-  const body = document.getElementById('lp-body');
-  body.innerHTML = `<strong>${esc(labelFor(n))}</strong><br><br>First invoked at log line: ${n.first_line}<br>Total executions: ${n.count}<br><br><em>${esc(n.explain||'')}</em>`;
+  const p = document.getElementById('logPreview');
+  let body = '';
+  if(n.kind === 'status'){
+    body = (n.messages||[]).map(([msg,cnt]) => `${esc(msg)}  \u00d7${cnt}`).join('\n');
+  } else if(n.kind === 'module'){
+    body = `START OF ${esc(n.label)}\n... (called ${n.count} time${n.count===1?'':'s'} in this trace)`;
+  } else {
+    body = `${esc(n.label)}\n(executed ${n.count} time${n.count===1?'':'s'})`;
+  }
+  p.innerHTML = '<h4>Log Preview</h4><span class="lp-name">' + esc(labelFor(n)) + '</span>' +
+                `<div style="color:var(--gray);margin-bottom:6px;">First seen at line ${n.first_line} \u00b7 occurred ${n.count}\u00d7</div>` +
+                (n.explain ? '<div style="color:var(--gray);font-style:italic;margin-bottom:8px;">' + esc(n.explain) + '</div>' : '') +
+                esc(body);
 }
 
 function edgeColor(kind){
@@ -704,10 +874,12 @@ function renderFlowDiagram(){
   canvas.style.width = w+'px'; canvas.style.height = h+'px';
 
   GRAPH.nodes.forEach(n=>{
-    const box = el('div', 'flowbox ' + (n.error?'t-error':(n.kind==='module'?'t-module':'')));
+    const box = el('div', 'flowbox ' + boxClassFor(n));
     box.style.left = (n.x+OFF_X)+'px'; box.style.top = (n.y+OFF_Y)+'px';
     box.style.width = GRAPH.box_w+'px'; box.style.height = GRAPH.box_h+'px';
+    box.appendChild(el('span','shape-icon', shapeIconFor(n)));
     box.appendChild(el('span','lbl', esc(labelFor(n))));
+    if(n.count > 1) box.appendChild(el('span','count-badge', '\u00d7'+n.count));
     box.addEventListener('mouseenter', ()=> { showLogPreview(n); });
     canvas.appendChild(box);
   });
@@ -764,9 +936,31 @@ function switchTab(which){
 document.getElementById('tabTreeBtn').addEventListener('click', ()=>switchTab('tree'));
 document.getElementById('tabFlowBtn').addEventListener('click', ()=>switchTab('flow'));
 
+const rc = DATA.header.rc;
+const rcBad = rc!==null && rc!==undefined && parseInt(rc,10)!==0;
 const s = DATA.stats;
+const rows = [
+  ['Return code', rc!==null&&rc!==undefined?rc:'\u2014', rc===null?'':(rcBad?'bad':'ok')],
+  ['Lines processed', s.lines, ''],
+  ['Steps', s.steps, ''],
+  ['Status lines', s.status, ''],
+  ['Module calls', s.modules, ''],
+  ['Errors found', s.errors, s.errors?'bad':'ok'],
+  ['Loops collapsed', s.loops, ''],
+  ['Iterations saved', s.iter_saved, ''],
+  ['Parse time', s.elapsed.toFixed(1)+'s', ''],
+  ['Throughput', (s.bytes/1048576/Math.max(s.elapsed,0.001)).toFixed(1)+' MB/s', ''],
+];
 const statsEl = document.getElementById('stats');
-[['Lines parsed', s.lines], ['Errors', s.errors], ['Execution Steps', s.steps]].forEach(([k,v])=>statsEl.appendChild(el('div','stat',`<span class="k">${k}</span><span class="v">${v}</span>`)));
+rows.forEach(([k,v,cls])=>statsEl.appendChild(el('div','stat '+cls,`<span class="k">${k}</span><span class="v">${v}</span>`)));
+
+const errbox = document.getElementById('errbox');
+if(DATA.errors.length){
+  errbox.appendChild(el('h3',null,'Error Index ('+DATA.errors.length+')'));
+  DATA.errors.slice(0,500).forEach(e=>{
+    errbox.appendChild(el('div','erritem',`<span class="ln">L${e.line}</span> ${esc(e.para||'')} ${esc(e.message)}`));
+  });
+}
 
 const flow = document.getElementById('flow');
 DATA.root.children.forEach(c=>flow.appendChild(renderNode(c)));
