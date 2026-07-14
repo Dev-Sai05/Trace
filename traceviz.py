@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 traceviz.py - Streaming visualizer for mainframe / COBOL DBIO trace logs.
-Vertical Swimlane Layout Edition.
+Vertical Swimlane Layout with Orthogonal Channel Routing.
 """
 
 import argparse
@@ -151,16 +151,16 @@ GLOSSARY = [
     (r'ROLLBACK',              'Undoing uncommitted database changes.'),
     (r'INITIALI[SZ]E|^INIT',   'One-time setup for this routine (work areas, counters, defaults).'),
     (r'VALIDATE',              'Checking that input values are valid before continuing.'),
-    (r'RETRIEVE',              'Pulling a control block or configuration value (often from shared memory or the DB).'),
+    (r'RETRIEVE',              'Pulling a control block or configuration value.'),
     (r'ATTACH-SHMEM',          'Attaching to a shared-memory segment used for cross-process control blocks.'),
     (r'SHMEM',                 'Working with a shared-memory segment.'),
     (r'ENV-VAR',               'Reading an operating-system environment variable.'),
-    (r'TRANSLATE-STATUS',      "Converting the database driver's raw return code into the application's own status code."),
+    (r'TRANSLATE-STATUS',      "Converting the database driver's raw return code."),
     (r'EVALUATE-FILE-NAME',    'Working out which physical file or table this request applies to.'),
     (r'PROCESS-RECORD',        'Doing the per-row work on the record that was just fetched.'),
     (r'GET-DATE',              'Reading the current system date/time.'),
     (r'GET-SYSTEM-NO',         'Determining which system/instance number this run is executing under.'),
-    (r'SET-APPLICATION-NAME',  'Tagging this DB session with an application name (helps DBA-side tracing).'),
+    (r'SET-APPLICATION-NAME',  'Tagging this DB session with an application name.'),
     (r'SETTXCON|TXCON',        'Setting up transaction/connection context for subsequent SQL calls.'),
     (r'DISPLAY',               'Writing a trace/debug line — diagnostic output, not business logic.'),
     (r'FINALISE|FINALIZE',     'Tearing down / releasing resources this routine acquired.'),
@@ -172,7 +172,7 @@ GLOSSARY = [
 GLOSSARY = [(re.compile(pat, re.I), text) for pat, text in GLOSSARY]
 
 MODULE_HINTS = [
-    (re.compile(r'^UT\d', re.I), 'Naming suggests a shared utility routine, commonly reused across programs for housekeeping tasks.'),
+    (re.compile(r'^UT\d', re.I), 'Naming suggests a shared utility routine.'),
     (re.compile(r'^DBIO', re.I), 'Naming suggests this is the DBIO layer that mediates SQL calls.'),
     (re.compile(r'^IOMISC', re.I), 'Naming suggests a miscellaneous I/O helper module.'),
 ]
@@ -216,8 +216,6 @@ def annotate_tree(node):
         for c in node['children']:
             annotate_tree(c)
     elif t == 'loop':
-        sample_names = ', '.join(c.get('name') or c.get('para') or c['type'] for c in node['children'])
-        node['explain'] = f'This block of {node["period"]} step(s) repeated {node["count"]} times.'
         for c in node['children']:
             annotate_tree(c)
     elif t == 'step':
@@ -318,15 +316,13 @@ class StreamGraph:
         return {'nodes': nodes, 'edges': edges, 'truncated': self.truncated}
 
 
-def compute_layout(graph_json, step_x=280, step_y=75, box_w=220, box_h=46):
+def compute_layout(graph_json, step_x=340, step_y=75, box_w=240, box_h=46):
     """
-    Computes a Vertical execution layout.
-    - Each module layer/context is grouped into separate horizontal columns (swimlanes).
-    - Sequential execution runs downwards along the Y-axis.
+    Computes columns with wide layout channels (step_x) to permit clean
+    orthogonal line drops between module swimlanes.
     """
     nodes = {n['key']: n for n in graph_json['nodes']}
     
-    # Isolate group contexts from tracking tokens
     for key, n in nodes.items():
         if '->' in key:
             parts = key.split('->', 1)
@@ -335,7 +331,6 @@ def compute_layout(graph_json, step_x=280, step_y=75, box_w=220, box_h=46):
             group = 'ROOT'
         n['group'] = group
 
-    # Order group sequences chronologically
     groups_seen = []
     for n in sorted(nodes.values(), key=lambda x: x['order']):
         g = n['group']
@@ -344,7 +339,6 @@ def compute_layout(graph_json, step_x=280, step_y=75, box_w=220, box_h=46):
             
     group_cols = {g: idx for idx, g in enumerate(groups_seen)}
 
-    # Map grid matrix (X = Column Index, Y = Sequential Steps Downwards)
     columns = {}
     for k in sorted(nodes, key=lambda k: nodes[k]['order']):
         col = group_cols[nodes[k]['group']]
@@ -512,7 +506,7 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
 
 
 # ---------------------------------------------------------------------------
-# HTML template config
+# HTML generation
 # ---------------------------------------------------------------------------
 HTML_TEMPLATE = r'''<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><title>TRACEVIEW // __PROGRAM__</title>
@@ -526,9 +520,7 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospa
 .brand .t2{font-size:20px;color:var(--green);font-weight:700;margin-bottom:14px;}
 .stat{display:flex;justify-content:space-between;padding:5px 0;font-size:11px;border-bottom:1px dashed var(--line);}
 .stat .k{color:var(--gray);text-transform:uppercase;font-size:10px;}
-.stat.bad .v{color:var(--red);} .stat.ok .v{color:var(--green);}
 .errbox{margin-top:16px;border-top:1px solid var(--line);padding-top:10px;}
-.erritem{font-size:10.5px;color:var(--red);padding:4px 0;}
 .main{flex:1;padding:24px 30px;overflow-x:auto;}
 .headerbar h1{font-size:15px;margin:0 0 4px;}
 .headerbar .sub{font-size:11px;color:var(--gray);}
@@ -585,9 +577,7 @@ body.hide-explain .explain{display:none;}
       <button class="tabbtn" id="tabFlowBtn">Vertical Flow Diagram</button>
     </div>
 
-    <div class="view active" id="viewTree">
-      <div class="flow" id="flow"></div>
-    </div>
+    <div class="flow" id="flow"></div>
 
     <div class="view" id="viewFlow">
       <div class="crumbs" id="crumbs"></div>
@@ -644,7 +634,7 @@ document.getElementById('ht').textContent = (DATA.header.program? 'PROGRAM '+DAT
 document.getElementById('hs').textContent = (DATA.header.start_at||'?') + '  \u2192  ' + (DATA.header.end_at||'?');
 document.getElementById('narrativeText').textContent = DATA.narrative || '';
 
-const GRAPH = DATA.graph || {nodes:[], edges:[], width:0, height:0, box_w:220, box_h:46};
+const GRAPH = DATA.graph || {nodes:[], edges:[], width:0, height:0, box_w:240, box_h:46};
 const OFF_X = 60, OFF_Y = 50;
 const nodeByKey = {};
 GRAPH.nodes.forEach(n => nodeByKey[n.key] = n);
@@ -669,10 +659,12 @@ function drawEdges(){
   const w = GRAPH.width + OFF_X*2 + GRAPH.box_w, h = GRAPH.height + OFF_Y*2 + GRAPH.box_h + 100;
   svg.setAttribute('width', w); svg.setAttribute('height', h);
   const NS = 'http://www.w3.org/2000/svg';
+  
   const defs = document.createElementNS(NS,'defs');
   ['ERROR','CALL','LOOP','NEXT'].forEach(kind=>{
     const color = kind==='NEXT' ? edgeColor('') : edgeColor(kind);
-    defs.innerHTML += `<marker id="arrow-${kind}" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="${color}"/></marker>`;
+    // Orient horizontal marker arrows safely for clean side entries
+    defs.innerHTML += `<marker id="arrow-${kind}" markerWidth="9" markerHeight="9" refX="5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="${color}"/></marker>`;
   });
   svg.appendChild(defs);
 
@@ -684,20 +676,25 @@ function drawEdges(){
     const path = document.createElementNS(NS,'path');
     let d;
 
-    // Redesigned Top-to-Bottom Curved Segment Interconnectors
     if(a.key === b.key){
+      // Self repeating loops
       const x = a.x+OFF_X+bw, y = a.y+OFF_Y+bh/2;
-      d = `M ${x} ${y-8} C ${x+30} ${y-20}, ${x+30} ${y+20}, ${x} ${y+8}`;
+      d = `M ${x} ${y-8} C ${x+24} ${y-15}, ${x+24} ${y+15}, ${x} ${y+8}`;
     } else if(a.layer === b.layer){
-      // Pure vertical downward step sequence
+      // Straight sequence steps inside the exact same column
       const x = a.x+OFF_X+bw/2;
       d = `M ${x} ${a.y+OFF_Y+bh} L ${x} ${b.y+OFF_Y}`;
     } else {
-      // Cross swimlane branch connectivity routing (Top-to-Bottom curves)
-      const x1 = a.x+OFF_X+bw/2, y1 = a.y+OFF_Y+bh;
-      const x2 = b.x+OFF_X+bw/2, y2 = b.y+OFF_Y;
-      const midY = (y1+y2)/2;
-      d = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2-4}`;
+      // Orthogonal Routing: Exits box horizontally, drops through channel space, enters target horizontally
+      const xStart = (b.layer > a.layer) ? (a.x + OFF_X + bw) : (a.x + OFF_X);
+      const yStart = a.y + OFF_Y + bh / 2;
+      const xEnd = (b.layer > a.layer) ? (b.x + OFF_X) : (b.x + OFF_X + bw);
+      const yEnd = b.y + OFF_Y + bh / 2;
+      
+      // Determine vertical drop mid-point alignment inside the lane gap space
+      const midX = xStart + (xEnd - xStart) * 0.45;
+      
+      d = `M ${xStart} ${yStart} H ${midX} V ${yEnd} H ${xEnd}`;
     }
     path.setAttribute('d', d);
     path.setAttribute('fill','none');
@@ -733,7 +730,7 @@ function applyView(){
   document.getElementById('zoomLabel').textContent = Math.round(view.scale*100) + '%';
 }
 function resetView(){
-  view.scale = 0.9; view.x = 30; view.y = 30; applyView();
+  view.scale = 0.8; view.x = 40; view.y = 40; applyView();
 }
 function clampScale(s){ return Math.min(3, Math.max(0.15, s)); }
 
