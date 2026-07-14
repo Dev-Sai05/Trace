@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 traceviz.py - Streaming visualizer for mainframe / COBOL DBIO trace logs.
-Three-Tab Edition: Tree View, Vertical Flow Diagram, and Code Pipeline View.
+Chronological Sequence & Nested Indentation Layout Edition.
 """
 
 import argparse
@@ -193,19 +193,19 @@ def explain_module(name):
     for pat, text in MODULE_HINTS:
         if pat.search(name):
             return text
-    return 'Custom site paragraph execution logic block.'
+    return 'Custom/site-specific routine — exact business purpose can\'t be inferred from the trace alone.'
 
 
 def explain_error_message(message):
     m = re.search(r'CURSOR FETCH ERROR\.?0*(\d+)', message, re.I)
     if m:
         code = m.group(1)
-        return f'A cursor FETCH failed. Underlying database SQLCODE: {code}.'
+        return f'A cursor FETCH failed. Return driver code: {code}.'
     if re.search(r'ABEND', message, re.I):
-        return 'The program terminated abnormally via an ABEND condition.'
+        return 'The program terminated abnormally (an ABEND) — check system log codes.'
     if re.search(r'TIMEOUT|TIME OUT', message, re.I):
-        return 'The operation exceeded its allocated execution scheduler threshold.'
-    return 'An error condition was flagged here.'
+        return 'The operation exceeded its allotted time scheduler window.'
+    return 'An error condition was reported here.'
 
 
 def annotate_tree(node):
@@ -253,6 +253,7 @@ def build_narrative(root, header, stats, error_index):
 
 
 class StreamGraph:
+    """Builds a purely chronological step array to replicate paper design execution."""
     def __init__(self):
         self.steps = [] 
         self.edges = []
@@ -275,18 +276,21 @@ class StreamGraph:
         })
         
         if self.last_idx is not None:
-            # Determine line identity: Cross-program calls vs standard local jumps
-            is_cross_call = (self.steps[self.last_idx]['depth'] != depth) or (kind == 'module')
             self.edges.append({
                 'from': f"step_{self.last_idx}",
                 'to': f"step_{idx}",
-                'kind': 'ERROR' if error else ('CALL' if is_cross_call else 'NEXT'),
+                'kind': 'ERROR' if error else '',
                 'count': 1
             })
         self.last_idx = idx
 
 
-def compute_layout(graph_json, indent_w=140, step_y=75, box_w=240, box_h=46):
+def compute_layout(graph_json, indent_w=140, step_y=70, box_w=240, box_h=46):
+    """
+    Computes visual matrix locations from chronological indices.
+    X-axis maps directly to the active nesting level depth (matches paper indentation sketch).
+    Y-axis moves downwards item-by-item in exact historical execution sequence.
+    """
     nodes = graph_json['nodes']
     for idx, n in enumerate(nodes):
         n['x'] = n['depth'] * indent_w
@@ -358,7 +362,6 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                     finished = stack.pop()
                     flush_frame(finished, max_period, stats, final=True, tail_keep=tail_keep)
                     stack[-1].buffer.append({'type': 'module', 'name': finished.name, 'children': finished.children})
-                    graph.add('module_end', f"END OF {finished.name}", len(stack) - 1, line_no=line_no)
                 else:
                     stats['unmatched_end'] += 1
                 continue
@@ -418,11 +421,6 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
         stack[-1].buffer.append({'type': 'module', 'name': finished.name + ' (unclosed)', 'children': finished.children})
 
     flush_frame(root_frame, max_period, stats, final=True, tail_keep=tail_keep)
-    
-    if header.get('end_at'):
-        prog_id = header['program'] or "PROGRAM"
-        graph.add('program_end', f"END OF {prog_id}", 0, line_no=line_no)
-
     root = {'type': 'root', 'name': 'ROOT', 'children': root_frame.children}
     stats['elapsed'] = time.time() - t0
     stats['bytes'] = bytes_read
@@ -432,7 +430,7 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
 
 
 # ---------------------------------------------------------------------------
-# HTML Presentation Template Layout Engine Config
+# Full HTML Presentation Engine Template
 # ---------------------------------------------------------------------------
 HTML_TEMPLATE = r'''<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><title>TRACEVIEW // __PROGRAM__</title>
@@ -440,10 +438,11 @@ HTML_TEMPLATE = r'''<!DOCTYPE html>
 :root{--bg:#080b08;--panel:#0e140f;--panel2:#101a12;--line:#1c2b1e;--green:#4dff88;--green-dim:#7fb894;
 --cyan:#6fd7e8;--amber:#ffb347;--red:#ff5c5c;--gray:#5c6b60;--text:#c9e6d2;}
 *{box-sizing:border-box;}
-html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospace,"SF Mono",monospace;font-size:13px;height:100vh;}
-.wrap{display:flex;height:100vh;overflow:hidden;}
-.sidebar{width:340px;flex:0 0 340px;background:var(--panel);border-right:1px solid var(--line);padding:18px;height:100vh;overflow-y:auto;}
-.brand .t2{font-size:20px;color:var(--green);font-weight:700;margin-bottom:14px;}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospace,"SF Mono",monospace;font-size:13px;}
+.wrap{display:flex;min-height:100vh;}
+.sidebar{width:340px;flex:0 0 340px;background:var(--panel);border-right:1px solid var(--line);padding:18px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.brand .t1{font-size:11px;letter-spacing:3px;color:var(--gray);text-transform:uppercase;}
+.brand .t2{font-size:20px;color:var(--green);font-weight:700;letter-spacing:1px;margin-bottom:14px;}
 .stat{display:flex;justify-content:space-between;padding:5px 0;font-size:11px;border-bottom:1px dashed var(--line);}
 .stat .k{color:var(--gray);text-transform:uppercase;font-size:10px;}
 .stat .v{color:var(--text);font-weight:600;}
@@ -451,7 +450,7 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospa
 .errbox{margin-top:16px;border-top:1px solid var(--line);padding-top:10px;}
 .errbox h3{font-size:11px;color:var(--red);text-transform:uppercase;margin:0 0 8px;}
 .erritem{font-size:10.5px;color:var(--red);padding:4px 0;border-bottom:1px dashed rgba(255,92,92,0.2);}
-.main{flex:1;padding:24px 30px;height:100vh;overflow-y:auto;display:flex;flex-direction:column;}
+.main{flex:1;padding:24px 30px;overflow-x:auto;}
 .headerbar h1{font-size:15px;margin:0 0 4px;}
 .headerbar .sub{font-size:11px;color:var(--gray);}
 .node{position:relative;margin:6px 0;}
@@ -460,54 +459,51 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospa
 .row .tag{font-size:9px;padding:1px 5px;border-radius:3px;flex:0 0 auto;margin-top:1px;}
 .step .tag{background:rgba(111,215,232,.08);color:var(--cyan);border:1px solid rgba(111,215,232,.25);}
 .status.success .row{color:var(--green);}
+.status.success .tag{background:rgba(77,255,136,.1);color:var(--green);border:1px solid rgba(77,255,136,.3);}
+.status.neutral .tag{background:rgba(140,140,140,.08);color:var(--gray);border:1px solid var(--line);}
 .status.error .row,.step.error .row{color:var(--red);background:rgba(255,92,92,.08);border:1px solid rgba(255,92,92,.4);}
-.module>.head{display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 10px;border-radius:5px;}
+.module>.head,.loop>.head{display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 10px;border-radius:5px;}
 .module>.head{color:var(--cyan);background:rgba(111,215,232,.05);border:1px solid rgba(111,215,232,.25);}
+.loop>.head{color:var(--amber);background:rgba(255,179,71,.06);border:1px dashed rgba(255,179,71,.45);}
+.module>.head .badge{margin-left:auto;font-size:10px;color:var(--gray);}
 .caret{width:10px;display:inline-block;transition:transform .15s;}
-.module.collapsed>.children{display:none;}
-.module.collapsed>.head .caret{transform:rotate(-90deg);}
+.module.collapsed>.children,.loop.collapsed>.children{display:none;}
+.module.collapsed>.head .caret,.loop.collapsed>.head .caret{transform:rotate(-90deg);}
 .explain{margin:2px 0 4px 26px;font-size:11px;color:var(--gray);font-style:italic;}
 .explain::before{content:'\203a ';color:var(--gray);}
-.narrative{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:5px;padding:14px 16px;margin-bottom:16px;}
+.mod-explain{font-size:10.5px;color:var(--gray);font-style:italic;margin:4px 0 0 20px;}
+body.hide-explain .explain,body.hide-explain .mod-explain{display:none;}
+.narrative{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:5px;padding:14px 16px;margin-bottom:16px;font-size:12.5px;line-height:1.6;}
 .narrative h3{margin:0 0 8px;font-size:11px;color:var(--green);text-transform:uppercase;}
 button{background:var(--panel2);color:var(--green);border:1px solid var(--line);border-radius:4px;padding:6px 9px;cursor:pointer;margin:2px 4px 8px 0;}
 
 .tabs{display:flex;gap:6px;margin-bottom:14px;}
 .tabbtn{background:var(--panel2);color:var(--gray);border:1px solid var(--line);border-radius:5px 5px 0 0;padding:8px 16px;cursor:pointer;text-transform:uppercase;}
 .tabbtn.active{color:var(--green);border-bottom:2px solid var(--bg);background:var(--panel);}
-.view{display:none;flex:1;min-height:0;} .view.active{display:block;}
-#viewFlow.active, #viewPipeline.active{display:flex;flex-direction:column;}
+.view{display:none;} .view.active{display:block;}
 
 .crumbs{font-size:11px;color:var(--gray);margin-bottom:14px;padding:8px 10px;background:var(--panel);border:1px solid var(--line);border-radius:5px;}
-.flowcols{display:flex;gap:20px;align-items:flex-start;flex:1;min-height:0;height:100%;}
-.flowdiagram{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;}
-.flow-canvas-wrap{position:relative;flex:1;border:1px solid var(--line);border-radius:6px;overflow-y:scroll;overflow-x:auto;background:var(--bg);cursor:grab;}
+.flowcols{display:flex;gap:20px;align-items:flex-start;}
+.flowdiagram{flex:1;min-width:0;}
+.canvas-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:11px;}
+.flow-canvas-wrap{position:relative;height:72vh;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--bg);cursor:grab;}
+.flow-canvas-wrap.dragging{cursor:grabbing;}
 .flow-canvas{position:absolute;top:0;left:0;transform-origin:0 0;}
 .connectors{position:absolute;top:0;left:0;pointer-events:none;overflow:visible;}
 .flowbox{position:absolute;border:1.5px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer;background:var(--panel2);display:flex;align-items:center;gap:8px;box-sizing:border-box;}
 .flowbox:hover{box-shadow:0 0 0 1px var(--green);z-index:5;}
 .flowbox .lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;}
 .flowbox.t-module{border-color:rgba(111,215,232,.5);color:var(--cyan);background:rgba(111,215,232,.05);}
-.flowbox.t-module-end{border-color:rgba(111,215,232,.35);color:var(--gray);background:rgba(111,215,232,.02);font-style:italic;}
-.flowbox.t-program-end{border-color:var(--green);color:var(--green);background:rgba(77,255,136,.05);font-weight:bold;}
 .flowbox.t-step{color:var(--text);}
 .flowbox.t-status-success{color:var(--green);border-color:rgba(77,255,136,.35);}
 .flowbox.t-error{color:var(--red);border-color:var(--red);box-shadow:0 0 10px rgba(255,92,92,.15);}
-.logpreview{width:380px;background:#050705;border:1px solid var(--line);border-radius:6px;padding:12px;font-size:11px;color:var(--green-dim);height:100%;overflow-y:auto;}
+.logpreview{flex:0 0 380px;position:sticky;top:18px;background:#050705;border:1px solid var(--line);border-radius:6px;padding:12px;font-size:11px;color:var(--green-dim);max-height:80vh;overflow:auto;}
 .logpreview h4{margin:0 0 8px;color:var(--green);text-transform:uppercase;}
-
-/* Pipeline Specific Styling */
-.pipe-container { display:flex; flex-direction:column; gap:16px; padding:20px; background:var(--panel); border-radius:6px; height:100%; overflow-y:scroll; }
-.pipe-row { display:flex; align-items:center; gap:12px; padding:10px; background:var(--panel2); border-left:4px solid var(--cyan); border-radius:4px; }
-.pipe-row.p-error { border-left-color:var(--red); background:rgba(255,92,92,0.04); }
-.pipe-depth { font-size:10px; color:var(--gray); background:var(--bg); padding:2px 6px; border-radius:3px; }
-.pipe-label { font-weight:bold; color:var(--text); }
-.pipe-explain { font-size:11px; color:var(--green-dim); font-style:italic; }
 </style></head>
 <body>
 <div class="wrap">
   <div class="sidebar">
-    <div class="brand"><div class="t2">TRACEVIEW REPORT</div></div>
+    <div class="brand"><div class="t1">TRACEVIEW</div><div class="t2">FLOW REPORT</div></div>
     <div id="stats"></div>
     <div class="errbox" id="errbox"></div>
   </div>
@@ -517,13 +513,13 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
     <div class="tabs">
       <button class="tabbtn active" id="tabTreeBtn">Tree View</button>
       <button class="tabbtn" id="tabFlowBtn">Vertical Flow Diagram</button>
-      <button class="tabbtn" id="tabPipelineBtn">Code Pipeline View</button>
     </div>
 
     <div class="view active" id="viewTree">
       <div>
-        <button onclick="document.querySelectorAll('.module.collapsed').forEach(n=>n.classList.remove('collapsed'))">Expand all</button>
-        <button onclick="document.querySelectorAll('.module').forEach(n=>n.classList.add('collapsed'))">Collapse all</button>
+        <button onclick="document.querySelectorAll('.module.collapsed,.loop.collapsed').forEach(n=>n.classList.remove('collapsed'))">Expand all</button>
+        <button onclick="document.querySelectorAll('.module,.loop').forEach(n=>n.classList.add('collapsed'))">Collapse all</button>
+        <button id="explainToggle">Hide explanations</button>
       </div>
       <div class="flow" id="flow"></div>
     </div>
@@ -546,13 +542,9 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
         </div>
         <div class="logpreview" id="logPreview">
           <h4>Execution Context</h4>
-          <div id="lp-body">Hover or select a timeline block to track execution line indices.</div>
+          <div id="lp-body">Hover or select a vertical pipeline block to track log properties.</div>
         </div>
       </div>
-    </div>
-
-    <div class="view" id="viewPipeline">
-      <div class="pipe-container" id="pipelineContainer"></div>
     </div>
   </div>
 </div>
@@ -564,7 +556,7 @@ function el(tag,cls,html){const e=document.createElement(tag); if(cls)e.classNam
 function renderNode(node){
   if(node.type==='module'){
     const wrap = el('div','node module collapsed');
-    const head = el('div','head', `<span>\u25be CALL \u203a ${esc(node.name)}</span>`);
+    const head = el('div','head', `<span class="caret">\u25be</span><span>CALL \u203a ${esc(node.name)}</span>`);
     head.addEventListener('click',()=>wrap.classList.toggle('collapsed'));
     const kids = el('div','children');
     node.children.forEach(c=>kids.appendChild(renderNode(c)));
@@ -592,18 +584,17 @@ const OFF_X = 60, OFF_Y = 40;
 const nodeByKey = {};
 GRAPH.nodes.forEach(n => nodeByKey[n.key] = n);
 
-function labelFor(n){
-  if(n.kind==='module') return 'CALL \u203a ' + n.label;
-  return n.label;
-}
+document.getElementById('crumbs').textContent = `${GRAPH.nodes.length} sequential execution timeline blocks processed.`;
+
+function labelFor(n){ return (n.kind==='module' ? 'CALL \u203a ' : '') + n.label; }
 
 function showLogPreview(n){
   const body = document.getElementById('lp-body');
   let msgs = '';
   if(n.messages && n.messages.length) {
-    msgs = '<br><br><strong>Log Context:</strong><br>' + n.messages.map(m=>esc(m[0])).join('\n');
+    msgs = '<br><br><strong>Log Output:</strong><br>' + n.messages.map(m=>esc(m[0])).join('\n');
   }
-  body.innerHTML = `<strong>${esc(labelFor(n))}</strong><br><br>Invoked at log line: ${n.first_line}<br>Stack Indentation Level: ${n.depth}<br><br><em>${esc(n.explain||'')}</em>${msgs}`;
+  body.innerHTML = `<strong>${esc(labelFor(n))}</strong><br><br>Invoked at trace line: ${n.first_line}<br>Indentation Depth Level: ${n.depth}<br><br><em>${esc(n.explain||'')}</em>${msgs}`;
 }
 
 function drawEdges(){
@@ -615,7 +606,6 @@ function drawEdges(){
   
   const defs = document.createElementNS(NS,'defs');
   defs.innerHTML = `<marker id="arrow-NEXT" markerWidth="9" markerHeight="9" refX="5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#5b7a63"/></marker>` +
-                   `<marker id="arrow-CALL" markerWidth="9" markerHeight="9" refX="5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#6fd7e8"/></marker>` +
                    `<marker id="arrow-ERROR" markerWidth="9" markerHeight="9" refX="5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#ff5c5c"/></marker>`;
   svg.appendChild(defs);
 
@@ -623,19 +613,16 @@ function drawEdges(){
   GRAPH.edges.forEach(e=>{
     const a = nodeByKey[e.from], b = nodeByKey[e.to];
     if(!a || !b) return;
-    
-    // Explicit line identification style
-    let color = '#5b7a63'; 
-    if(e.kind === 'ERROR') color = '#ff5c5c';
-    else if(e.kind === 'CALL') color = '#6fd7e8'; // Cyan line for Program-to-Program calls
-    
+    const color = e.kind==='ERROR' ? '#ff5c5c' : '#5b7a63';
     const path = document.createElementNS(NS,'path');
     let d;
 
-    if(a.layer === b.layer && e.kind !== 'CALL'){
+    if(a.layer === b.layer){
+      // Same level sequence step down
       const x = a.x + OFF_X + bw/2;
       d = `M ${x} ${a.y+OFF_Y+bh} L ${x} ${b.y+OFF_Y}`;
     } else {
+      // Orthogonal Lane Drop Channel Routing matching hand-drawn schema lines
       const xStart = a.x + OFF_X + bw/2;
       const yStart = a.y + OFF_Y + bh;
       const xEnd = b.x + OFF_X + bw/2;
@@ -662,8 +649,6 @@ function renderFlowDiagram(){
     let cls = 't-step';
     if(n.error) cls = 't-error';
     else if(n.kind==='module') cls = 't-module';
-    else if(n.kind==='module_end') cls = 't-module-end';
-    else if(n.kind==='program_end') cls = 't-program-end';
     else if(n.kind==='status' && /success|good|complet|commit/i.test((n.messages[0]||[''])[0])) cls = 't-status-success';
     
     const box = el('div', 'flowbox ' + cls);
@@ -674,65 +659,57 @@ function renderFlowDiagram(){
     canvas.appendChild(box);
   });
   drawEdges();
-}
-
-function renderPipelineView() {
-  const container = document.getElementById('pipelineContainer');
-  container.innerHTML = '';
-  GRAPH.nodes.forEach(n => {
-    const row = el('div', 'pipe-row' + (n.error ? ' p-error' : ''));
-    row.appendChild(el('span', 'pipe-depth', `Lvl ${n.depth}`));
-    row.appendChild(el('span', 'pipe-label', esc(labelFor(n))));
-    row.appendChild(el('span', 'pipe-explain', esc(n.explain || 'Step execution segment.')));
-    container.appendChild(row);
-  });
+  resetView();
 }
 
 const view = {scale:1, x:20, y:20};
 function applyView(){
   const canvas = document.getElementById('flowCanvas');
   canvas.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.scale})`;
+  document.getElementById('zoomLabel').textContent = Math.round(view.scale*100) + '%';
 }
 function resetView(){
-  view.scale = 0.95; view.x = 30; view.y = 30; applyView();
+  view.scale = 0.85; view.x = 30; view.y = 30; applyView();
 }
 function clampScale(s){ return Math.min(3, Math.max(0.15, s)); }
 
 (function setupPanZoom(){
   const wrap = document.getElementById('flowWrap');
   wrap.addEventListener('wheel', (e)=>{
-    if(e.ctrlKey) {
-      e.preventDefault();
-      const rect = wrap.getBoundingClientRect();
-      const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-      const newScale = clampScale(view.scale * (e.deltaY < 0 ? 1.05 : 0.95));
-      view.x = mx - (mx - view.x) * (newScale/view.scale);
-      view.y = my - (my - view.y) * (newScale/view.scale);
-      view.scale = newScale;
-      applyView();
-    }
+    e.preventDefault();
+    const rect = wrap.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const newScale = clampScale(view.scale * (e.deltaY < 0 ? 1.1 : 0.9));
+    view.x = mx - (mx - view.x) * (newScale/view.scale);
+    view.y = my - (my - view.y) * (newScale/view.scale);
+    view.scale = newScale;
+    applyView();
   }, {passive:false});
 
-  document.getElementById('zoomInBtn').addEventListener('click', ()=>{ view.scale = clampScale(view.scale*1.1); applyView(); });
-  document.getElementById('zoomOutBtn').addEventListener('click', ()=>{ view.scale = clampScale(view.scale*0.9); applyView(); });
+  let dragging = false, startX=0, startY=0, origX=0, origY=0;
+  wrap.addEventListener('mousedown', (e)=>{
+    if(e.target.closest('.flowbox')) return;
+    dragging = true; startX = e.clientX; startY = e.clientY; origX = view.x; origY = view.y;
+  });
+  window.addEventListener('mousemove', (e)=>{
+    if(!dragging) return;
+    view.x = origX + (e.clientX - startX); view.y = origY + (e.clientY - startY); applyView();
+  });
+  window.addEventListener('mouseup', ()=>{ dragging=false; });
+  document.getElementById('zoomInBtn').addEventListener('click', ()=>{ view.scale = clampScale(view.scale*1.2); applyView(); });
+  document.getElementById('zoomOutBtn').addEventListener('click', ()=>{ view.scale = clampScale(view.scale*0.8); applyView(); });
   document.getElementById('zoomResetBtn').addEventListener('click', resetView);
 })();
 
 function switchTab(which){
   document.getElementById('tabTreeBtn').classList.toggle('active', which==='tree');
   document.getElementById('tabFlowBtn').classList.toggle('active', which==='flow');
-  document.getElementById('tabPipelineBtn').classList.toggle('active', which==='pipeline');
-  
   document.getElementById('viewTree').classList.toggle('active', which==='tree');
   document.getElementById('viewFlow').classList.toggle('active', which==='flow');
-  document.getElementById('viewPipeline').classList.toggle('active', which==='pipeline');
-  
   if(which==='flow') renderFlowDiagram();
-  if(which==='pipeline') renderPipelineView();
 }
 document.getElementById('tabTreeBtn').addEventListener('click', ()=>switchTab('tree'));
 document.getElementById('tabFlowBtn').addEventListener('click', ()=>switchTab('flow'));
-document.getElementById('tabPipelineBtn').addEventListener('click', ()=>switchTab('pipeline'));
 
 const rc = DATA.header.rc;
 const rcBad = rc!==null && rc!==undefined && parseInt(rc,10)!==0;
@@ -744,6 +721,10 @@ const rows = [
   ['Status lines', s.status, ''],
   ['Module calls', s.modules, ''],
   ['Errors found', s.errors, s.errors?'bad':'ok'],
+  ['Loops collapsed', s.loops, ''],
+  ['Iterations saved', s.iter_saved, ''],
+  ['Parse time', s.elapsed.toFixed(1)+'s', ''],
+  ['Throughput', (s.bytes/1048576/Math.max(s.elapsed,0.001)).toFixed(1)+' MB/s', ''],
 ];
 const statsEl = document.getElementById('stats');
 rows.forEach(([k,v,cls])=>statsEl.appendChild(el('div','stat '+cls,`<span class="k">${k}</span><span class="v">${v}</span>`)));
