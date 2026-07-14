@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 traceviz.py - Streaming visualizer for mainframe / COBOL DBIO trace logs.
-Vertical Swimlane Layout with Orthogonal Channel Routing.
+Vertical Swimlane Layout with Orthogonal Channel Routing (Fixed Tab View wrappers).
 """
 
 import argparse
@@ -680,7 +680,6 @@ function drawEdges(){
       const x = a.x+OFF_X+bw/2;
       d = `M ${x} ${a.y+OFF_Y+bh} L ${x} ${b.y+OFF_Y}`;
     } else {
-      // Orthogonal Lane Drop Routing Strategy
       const xStart = (b.layer > a.layer) ? (a.x + OFF_X + bw) : (a.x + OFF_X);
       const yStart = a.y + OFF_Y + bh / 2;
       const xEnd = (b.layer > a.layer) ? (b.x + OFF_X) : (b.x + OFF_X + bw);
