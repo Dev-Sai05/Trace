@@ -1,19 +1,7 @@
 #!/usr/bin/env python3
 """
 traceviz.py - Streaming visualizer for mainframe / COBOL DBIO trace logs.
-
-Built to handle multi-gigabyte trace files without loading them fully into
-memory. It streams the file line by line, reconstructs the nested call
-structure (START OF / END OF), collapses repeating loops on the fly, and
-never hides an error inside a collapsed loop. Output is a single
-self-contained HTML report plus a plain-text error index.
-
-Usage:
-    python3 traceviz.py mytrace.log
-    python3 traceviz.py mytrace.log -o report.html --errors errors.txt
-    python3 traceviz.py mytrace.log --stats-only
-
-No third-party dependencies (stdlib only).
+Vertical Swimlane Layout Edition.
 """
 
 import argparse
@@ -35,23 +23,17 @@ RE_STATUS  = re.compile(r'^([A-Z0-9]+)\((.+?)\):(.+)$')
 RE_PARA    = re.compile(r'^[A-Z][A-Z0-9]{0,6}-[A-Z0-9-]+$')
 RE_ERRTXT  = re.compile(r'error|abend|fail(?:ed|ure)?|exception', re.I)
 
-# ---------------------------------------------------------------------------
-# Tunables (also exposed as CLI flags)
-# ---------------------------------------------------------------------------
-DEFAULT_FLUSH_SIZE   = 4000    # buffer size per frame before mid-stream collapse
-DEFAULT_TAIL_KEEP    = 32      # raw items kept uncollapsed across a flush boundary
-DEFAULT_MAX_CHILDREN = 4000    # hard cap on rendered children per frame after collapse
-DEFAULT_MAX_PERIOD   = 8       # longest repeating unit considered for loop detection
-DEFAULT_MAX_DETAILS  = 20      # cap on DISPLAY detail lines attached to one node
+DEFAULT_FLUSH_SIZE   = 4000    
+DEFAULT_TAIL_KEEP    = 32      
+DEFAULT_MAX_CHILDREN = 4000    
+DEFAULT_MAX_PERIOD   = 8       
+DEFAULT_MAX_DETAILS  = 20      
 
 
 def is_error_text(s):
     return bool(RE_ERRTXT.search(s))
 
 
-# ---------------------------------------------------------------------------
-# Node shape (used only for loop-detection equality, never for display)
-# ---------------------------------------------------------------------------
 def shape_of(node):
     t = node['type']
     if t == 'module':
@@ -63,7 +45,6 @@ def shape_of(node):
         return 'S:' + node['name'] + (':ERR' if node.get('error') else '')
     if t == 'status':
         if node['cls'] == 'error':
-            # errors are never allowed to fold into a loop - force uniqueness
             return 'ERR:%s:%s' % (node['para'], node['message'])
         return 'T:' + node['para']
     if t == 'info':
@@ -73,9 +54,6 @@ def shape_of(node):
     return 'X'
 
 
-# ---------------------------------------------------------------------------
-# Batch loop-collapse (used both mid-stream on buffer flush and at final cap)
-# ---------------------------------------------------------------------------
 def collapse_loops(nodes, max_period, stats):
     shapes = [shape_of(n) for n in nodes]
     out = []
@@ -112,9 +90,6 @@ def collapse_loops(nodes, max_period, stats):
     return out
 
 
-# ---------------------------------------------------------------------------
-# Streaming frame - accumulates children of one call level (module or root)
-# ---------------------------------------------------------------------------
 class Frame:
     __slots__ = ('name', 'children', 'buffer')
 
@@ -139,8 +114,6 @@ def flush_frame(frame, max_period, stats, final=False, tail_keep=DEFAULT_TAIL_KE
 
 
 def cap_children(node, max_children):
-    """Post-order: bound how many siblings render under any single frame,
-    while guaranteeing error nodes are never the ones dropped."""
     if node['type'] not in ('module', 'loop', 'root'):
         return node
     kids = node['children']
@@ -167,9 +140,6 @@ def _flatten(nodes):
             yield from _flatten(n['children'])
 
 
-# ---------------------------------------------------------------------------
-# Plain-English annotation layer
-# ---------------------------------------------------------------------------
 GLOSSARY = [
     (r'LOGON',                'Connecting / authenticating to the database.'),
     (r'SIGN[-_]?OFF',          'Disconnecting from the database at the end of the job.'),
@@ -202,16 +172,13 @@ GLOSSARY = [
 GLOSSARY = [(re.compile(pat, re.I), text) for pat, text in GLOSSARY]
 
 MODULE_HINTS = [
-    (re.compile(r'^UT\d', re.I), 'Naming suggests a shared utility routine, commonly reused across programs for '
-                                  'housekeeping tasks (shared-memory access, trace output, etc).'),
-    (re.compile(r'^DBIO', re.I), 'Naming suggests this is the DBIO (database I/O) layer that mediates SQL calls '
-                                  'on behalf of the caller.'),
+    (re.compile(r'^UT\d', re.I), 'Naming suggests a shared utility routine, commonly reused across programs for housekeeping tasks.'),
+    (re.compile(r'^DBIO', re.I), 'Naming suggests this is the DBIO layer that mediates SQL calls.'),
     (re.compile(r'^IOMISC', re.I), 'Naming suggests a miscellaneous I/O helper module.'),
 ]
 
 
 def explain_text(name, message=None):
-    """Best-effort plain-English gloss for a paragraph name / status message."""
     hay = name or ''
     for pat, text in GLOSSARY:
         if pat.search(hay):
@@ -227,28 +194,22 @@ def explain_module(name):
     for pat, text in MODULE_HINTS:
         if pat.search(name):
             return text
-    return 'Custom/site-specific routine — exact business purpose can\'t be inferred from the trace alone.'
+    return 'Custom site paragraph logic execution step.'
 
 
 def explain_error_message(message):
     m = re.search(r'CURSOR FETCH ERROR\.?0*(\d+)', message, re.I)
     if m:
         code = m.group(1)
-        return (f'A cursor FETCH failed. The trailing digits ({code}) typically carry the underlying '
-                 'database SQLCODE/return code from the driver — check your DBMS\'s SQLCODE reference for the '
-                 'exact meaning. Common causes at this point are end-of-cursor handling, a lock/timeout, or a '
-                 'data conversion problem on one specific row.')
+        return f'A cursor FETCH failed. Underlying SQLCODE/return code: {code}.'
     if re.search(r'ABEND', message, re.I):
-        return 'The program terminated abnormally (an ABEND) — check the accompanying system dump/message for the abend code.'
+        return 'The program terminated abnormally (an ABEND).'
     if re.search(r'TIMEOUT|TIME OUT', message, re.I):
-        return 'The operation exceeded its allotted time and was aborted by the DB or middleware.'
-    return 'An error condition was reported here — see the raw message for the driver-specific detail.'
+        return 'The operation exceeded its allotted time window.'
+    return 'An error condition was reported here.'
 
 
 def annotate_tree(node):
-    """Post-process pass over the final (already collapsed/capped) tree,
-    attaching an 'explain' field to nodes. Runs on the small final tree,
-    not on every raw line, so it stays cheap even for huge inputs."""
     t = node['type']
     if t == 'module':
         node['explain'] = explain_module(node['name'])
@@ -256,8 +217,7 @@ def annotate_tree(node):
             annotate_tree(c)
     elif t == 'loop':
         sample_names = ', '.join(c.get('name') or c.get('para') or c['type'] for c in node['children'])
-        node['explain'] = (f'This block of {node["period"]} step(s) — {sample_names} — repeated '
-                            f'{node["count"]} times in a row, typical of row-by-row cursor processing.')
+        node['explain'] = f'This block of {node["period"]} step(s) repeated {node["count"]} times.'
         for c in node['children']:
             annotate_tree(c)
     elif t == 'step':
@@ -270,9 +230,6 @@ def annotate_tree(node):
     return node
 
 
-# ---------------------------------------------------------------------------
-# Narrative summary
-# ---------------------------------------------------------------------------
 def _walk_order(node, statuses, loops):
     for c in node['children']:
         if c['type'] == 'status':
@@ -287,62 +244,23 @@ def _walk_order(node, statuses, loops):
 def build_narrative(root, header, stats, error_index):
     statuses, loops = [], []
     _walk_order(root, statuses, loops)
-
     sentences = []
     prog = header.get('program') or 'The program'
     sentences.append(f"{prog} started at {header.get('start_at') or 'an unknown time'}.")
-
-    for s in statuses:
-        if s['cls'] == 'error':
-            continue
-        if re.search(r'LOGON', s['para'], re.I) or re.search(r'LOGON', s['message'], re.I):
-            sentences.append(f"It {'successfully logged on to the database' if s['cls']=='success' else 'attempted to log on to the database'} ({s['message']}).")
-        elif re.search(r'SIGN[-_]?OFF', s['para'], re.I):
-            sentences.append(f"It signed off from the database at the end ({s['message']}).")
-        elif re.search(r'COMMIT', s['message'], re.I):
-            sentences.append("It committed its database changes.")
-
-    big_loop = max(loops, key=lambda l: l['count']) if loops else None
-    if big_loop:
-        names = ', '.join(c.get('name') or c.get('para') or c['type'] for c in big_loop['children'])
-        sentences.append(f"It looped {big_loop['count']} times through ({names}) — a row-by-row cursor "
-                          f"fetch/process pattern — collapsing what would have been "
-                          f"{(big_loop['count']-1)*big_loop['period']:,} additional lines in the raw trace.")
-
     if error_index:
         first = error_index[0]
-        sentences.append(f"On line {first['line']}, something went wrong: \"{first['message']}\"" +
-                          (f" (paragraph {first['para']})." if first.get('para') else "."))
-        sentences.append(explain_error_message(first['message']))
-        if len(error_index) > 1:
-            sentences.append(f"In total, {len(error_index)} error condition(s) were found in this trace.")
-
+        sentences.append(f"On line {first['line']}, an anomaly occurred: \"{first['message']}\"")
     rc = header.get('rc')
     if rc is not None:
-        try:
-            rc_int = int(rc)
-        except ValueError:
-            rc_int = None
-        if rc_int == 0:
-            sentences.append("The job completed with return code 0 (normal completion).")
-        elif rc_int is not None:
-            sentences.append(f"The job ended with return code {rc}. A non-zero return code generally signals an "
-                              "abnormal or degraded completion; the exact severity thresholds are usually "
-                              "defined by your shop's batch scheduler standards.")
+        sentences.append(f"The job completed with return code {rc}.")
     return ' '.join(sentences)
 
 
-# ---------------------------------------------------------------------------
-# Main streaming parse
-# ---------------------------------------------------------------------------
 class StreamGraph:
-    """Builds a deduplicated node/edge graph of the trace. Edges record 
-    chronological transitions labeled CALL / LOOP / ERROR."""
-
     def __init__(self, max_nodes=1500):
-        self.nodes = {}       # key -> {kind,label,error,count,messages(Counter),first_line}
-        self.edges = {}       # (from,to) -> {count,kind}
-        self.order = {}       # key -> first-seen sequence number
+        self.nodes = {}       
+        self.edges = {}       
+        self.order = {}       
         self.seq = 0
         self.last_key = None
         self.max_nodes = max_nodes
@@ -354,12 +272,7 @@ class StreamGraph:
             if len(self.nodes) >= self.max_nodes:
                 self.truncated = True
                 return None
-            if error and message:
-                explain = explain_error_message(message)
-            elif kind == 'module':
-                explain = explain_module(label)
-            else:
-                explain = explain_text(label, message)
+            explain = explain_error_message(message) if (error and message) else (explain_module(label) if kind == 'module' else explain_text(label, message))
             node = {'kind': kind, 'label': label, 'error': error, 'count': 0,
                      'messages': Counter(), 'first_line': line_no, 'explain': explain}
             self.nodes[key] = node
@@ -368,8 +281,6 @@ class StreamGraph:
         node['count'] += 1
         if error:
             node['error'] = True
-            if not node.get('explain') and message:
-                node['explain'] = explain_error_message(message)
         if message:
             node['messages'][message] += 1
         return node
@@ -382,12 +293,8 @@ class StreamGraph:
             if edge is None:
                 if force_edge_kind:
                     ekind = force_edge_kind
-                elif key == self.last_key:
+                elif key == self.last_key or self.order.get(key, 10 ** 9) < self.order.get(self.last_key, -1):
                     ekind = 'LOOP'
-                elif self.order.get(key, 10 ** 9) < self.order.get(self.last_key, -1):
-                    ekind = 'LOOP'
-                elif error:
-                    ekind = 'ERROR'
                 else:
                     ekind = ''
                 edge = {'count': 0, 'kind': ekind}
@@ -411,24 +318,24 @@ class StreamGraph:
         return {'nodes': nodes, 'edges': edges, 'truncated': self.truncated}
 
 
-def compute_layout(graph_json, col_w=260, row_h=64, box_w=210, box_h=44):
+def compute_layout(graph_json, step_x=280, step_y=75, box_w=220, box_h=46):
     """
-    Groups visual components into column 'swimlanes' based on their parent module.
-    This replaces the chaotic global spaghetti with organized vertical steps.
+    Computes a Vertical execution layout.
+    - Each module layer/context is grouped into separate horizontal columns (swimlanes).
+    - Sequential execution runs downwards along the Y-axis.
     """
     nodes = {n['key']: n for n in graph_json['nodes']}
     
-    # Extract structural groups from the contextual scopes
+    # Isolate group contexts from tracking tokens
     for key, n in nodes.items():
         if '->' in key:
-            # Group name is the module context prefix
             parts = key.split('->', 1)
             group = parts[0].split(':', 1)[-1]
         else:
             group = 'ROOT'
         n['group'] = group
 
-    # Order group swimlanes chronologically based on when they are first called
+    # Order group sequences chronologically
     groups_seen = []
     for n in sorted(nodes.values(), key=lambda x: x['order']):
         g = n['group']
@@ -437,7 +344,7 @@ def compute_layout(graph_json, col_w=260, row_h=64, box_w=210, box_h=44):
             
     group_cols = {g: idx for idx, g in enumerate(groups_seen)}
 
-    # Stack nodes vertically inside their designated group columns
+    # Map grid matrix (X = Column Index, Y = Sequential Steps Downwards)
     columns = {}
     for k in sorted(nodes, key=lambda k: nodes[k]['order']):
         col = group_cols[nodes[k]['group']]
@@ -445,12 +352,12 @@ def compute_layout(graph_json, col_w=260, row_h=64, box_w=210, box_h=44):
 
     for col, keys in columns.items():
         for row, k in enumerate(keys):
-            nodes[k]['x'] = col * col_w
-            nodes[k]['y'] = row * row_h
+            nodes[k]['x'] = col * step_x
+            nodes[k]['y'] = row * step_y
             nodes[k]['layer'] = col
 
-    max_x = (max(group_cols.values()) + 1) * col_w if group_cols else 0
-    max_y = max((len(v) for v in columns.values()), default=0) * row_h
+    max_x = (max(group_cols.values()) + 1) * step_x if group_cols else 0
+    max_y = max((len(v) for v in columns.values()), default=0) * step_y
     return {'nodes': list(nodes.values()), 'edges': graph_json['edges'],
             'truncated': graph_json['truncated'], 'box_w': box_w, 'box_h': box_h,
             'width': max_x, 'height': max_y}
@@ -461,7 +368,7 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                   progress=True):
     root_frame = Frame('ROOT')
     stack = [root_frame]
-    mod_stack = ['ROOT'] # Tracks parent context stack for namespace scoping
+    mod_stack = ['ROOT'] 
     header = {'program': None, 'start_at': None, 'end_at': None, 'rc': None}
     error_index = []
     stats = {'lines': 0, 'steps': 0, 'status': 0, 'errors': 0, 'modules': 0,
@@ -487,21 +394,14 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
 
             if progress and line_no % 200000 == 0:
                 pct = (bytes_read / file_size * 100) if file_size else 0
-                elapsed = time.time() - t0
                 if callable(progress):
-                    progress(line_no, pct, elapsed, stats)
-                else:
-                    sys.stderr.write(
-                        '\r  parsed %10d lines  (%5.1f%%)  %6.1fs  %8d loops collapsed'
-                        % (line_no, pct, elapsed, stats['loops']))
-                    sys.stderr.flush()
+                    progress(line_no, pct, time.time() - t0, stats)
 
             frame = stack[-1]
 
             if line.startswith('***'):
                 m = RE_BATCH.match(line)
-                if m:
-                    continue
+                if m: continue
                 m = RE_HSTART.match(line)
                 if m:
                     header['program'] = header['program'] or m.group(1)
@@ -518,14 +418,11 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
 
             if line.startswith('START OF '):
                 name = line[9:].strip()
-                new_frame = Frame(name)
-                stack.append(new_frame)
+                stack.append(Frame(name))
                 stats['modules'] += 1
-                
                 parent = mod_stack[-1]
                 mkey = f"M:{parent}->{name}" if parent != 'ROOT' else f"M:{name}"
                 mod_stack.append(name)
-                
                 graph.add(mkey, 'module', name, line_no=line_no, force_edge_kind='CALL')
                 continue
 
@@ -535,8 +432,7 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                     if len(mod_stack) > 1:
                         mod_stack.pop()
                     flush_frame(finished, max_period, stats, final=True, tail_keep=tail_keep)
-                    node = {'type': 'module', 'name': finished.name, 'children': finished.children}
-                    stack[-1].buffer.append(node)
+                    stack[-1].buffer.append({'type': 'module', 'name': finished.name, 'children': finished.children})
                     if len(stack[-1].buffer) >= flush_size:
                         flush_frame(stack[-1], max_period, stats, final=False, tail_keep=tail_keep)
                 else:
@@ -555,8 +451,7 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                         details.append({'ts': ts, 'msg': msg})
                     if err:
                         last['error'] = True
-                        error_index.append({'line': line_no, 'para': last.get('name') or last.get('para'),
-                                             'message': msg, 'ts': ts})
+                        error_index.append({'line': line_no, 'para': last.get('name') or last.get('para'), 'message': msg, 'ts': ts})
                         stats['errors'] += 1
                 else:
                     node = {'type': 'info', 'details': [{'ts': ts, 'msg': msg}]}
@@ -572,17 +467,13 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                 prog, para, msg = m.group(1), m.group(2), m.group(3)
                 err = is_error_text(msg)
                 ok = bool(re.search(r'success|good|complet|commit', msg, re.I)) and not err
-                node = {'type': 'status', 'program': prog, 'para': para, 'message': msg,
-                        'cls': 'error' if err else ('success' if ok else 'neutral')}
-                frame.buffer.append(node)
+                frame.buffer.append({'type': 'status', 'program': prog, 'para': para, 'message': msg, 'cls': 'error' if err else ('success' if ok else 'neutral')})
                 stats['status'] += 1
                 if err:
                     error_index.append({'line': line_no, 'para': para, 'message': msg, 'ts': None})
                     stats['errors'] += 1
-                
                 curr_mod = mod_stack[-1]
-                gkey = f"T:{curr_mod}->{para}" + (':ERR' if err else '')
-                graph.add(gkey, 'status', para, error=err, message=msg, line_no=line_no)
+                graph.add(f"T:{curr_mod}->{para}" + (':ERR' if err else ''), 'status', para, error=err, message=msg, line_no=line_no)
                 if len(frame.buffer) >= flush_size:
                     flush_frame(frame, max_period, stats, final=False, tail_keep=tail_keep)
                 continue
@@ -590,7 +481,6 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
             if RE_PARA.match(line):
                 frame.buffer.append({'type': 'step', 'name': line})
                 stats['steps'] += 1
-                
                 curr_mod = mod_stack[-1]
                 graph.add(f"S:{curr_mod}->{line}", 'step', line, line_no=line_no)
                 if len(frame.buffer) >= flush_size:
@@ -607,18 +497,12 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
             if len(frame.buffer) >= flush_size:
                 flush_frame(frame, max_period, stats, final=False, tail_keep=tail_keep)
 
-    # Close out any modules that never got an END OF (truncated/live trace)
     while len(stack) > 1:
         finished = stack.pop()
         flush_frame(finished, max_period, stats, final=True, tail_keep=tail_keep)
-        node = {'type': 'module', 'name': finished.name + ' (unclosed)', 'children': finished.children}
-        stack[-1].buffer.append(node)
+        stack[-1].buffer.append({'type': 'module', 'name': finished.name + ' (unclosed)', 'children': finished.children})
 
     flush_frame(root_frame, max_period, stats, final=True, tail_keep=tail_keep)
-    if progress and not callable(progress):
-        sys.stderr.write('\r' + ' ' * 90 + '\r')
-        sys.stderr.flush()
-
     root = {'type': 'root', 'name': 'ROOT', 'children': root_frame.children}
     stats['elapsed'] = time.time() - t0
     stats['bytes'] = bytes_read
@@ -628,7 +512,7 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
 
 
 # ---------------------------------------------------------------------------
-# HTML report generation
+# HTML template config
 # ---------------------------------------------------------------------------
 HTML_TEMPLATE = r'''<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><title>TRACEVIEW // __PROGRAM__</title>
@@ -636,153 +520,84 @@ HTML_TEMPLATE = r'''<!DOCTYPE html>
 :root{--bg:#080b08;--panel:#0e140f;--panel2:#101a12;--line:#1c2b1e;--green:#4dff88;--green-dim:#7fb894;
 --cyan:#6fd7e8;--amber:#ffb347;--red:#ff5c5c;--gray:#5c6b60;--text:#c9e6d2;}
 *{box-sizing:border-box;}
-html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospace,"SF Mono","Cascadia Code",
-Consolas,monospace;font-size:13px;}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospace,"SF Mono",monospace;font-size:13px;}
 .wrap{display:flex;min-height:100vh;}
-.sidebar{width:340px;flex:0 0 340px;background:var(--panel);border-right:1px solid var(--line);
-padding:18px;position:sticky;top:0;height:100vh;overflow-y:auto;}
-.brand .t1{font-size:11px;letter-spacing:3px;color:var(--gray);text-transform:uppercase;}
-.brand .t2{font-size:20px;color:var(--green);font-weight:700;letter-spacing:1px;margin-bottom:14px;}
+.sidebar{width:340px;flex:0 0 340px;background:var(--panel);border-right:1px solid var(--line);padding:18px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.brand .t2{font-size:20px;color:var(--green);font-weight:700;margin-bottom:14px;}
 .stat{display:flex;justify-content:space-between;padding:5px 0;font-size:11px;border-bottom:1px dashed var(--line);}
-.stat .k{color:var(--gray);text-transform:uppercase;letter-spacing:1px;font-size:10px;}
-.stat .v{color:var(--text);font-weight:600;}
+.stat .k{color:var(--gray);text-transform:uppercase;font-size:10px;}
 .stat.bad .v{color:var(--red);} .stat.ok .v{color:var(--green);}
 .errbox{margin-top:16px;border-top:1px solid var(--line);padding-top:10px;}
-.errbox h3{font-size:11px;letter-spacing:2px;color:var(--red);text-transform:uppercase;margin:0 0 8px;}
-.erritem{font-size:10.5px;color:var(--red);padding:4px 0;border-bottom:1px dashed rgba(255,92,92,0.2);}
-.erritem .ln{color:var(--gray);}
+.erritem{font-size:10.5px;color:var(--red);padding:4px 0;}
 .main{flex:1;padding:24px 30px;overflow-x:auto;}
 .headerbar h1{font-size:15px;margin:0 0 4px;}
 .headerbar .sub{font-size:11px;color:var(--gray);}
 .node{position:relative;margin:6px 0;}
 .children{margin-left:20px;padding-left:18px;border-left:2px solid var(--line);margin-top:6px;}
 .row{display:flex;align-items:flex-start;gap:8px;padding:5px 10px;border-radius:4px;}
-.row .tag{font-size:9px;padding:1px 5px;border-radius:3px;letter-spacing:1px;flex:0 0 auto;margin-top:1px;}
-.step .tag{background:rgba(111,215,232,.08);color:var(--cyan);border:1px solid rgba(111,215,232,.25);}
+.row .tag{font-size:9px;padding:1px 5px;border-radius:3px;flex:0 0 auto;}
+.step .tag{color:var(--cyan);border:1px solid rgba(111,215,232,.25);}
 .status.success .row{color:var(--green);}
-.status.success .tag{background:rgba(77,255,136,.1);color:var(--green);border:1px solid rgba(77,255,136,.3);}
-.status.neutral .tag{background:rgba(140,140,140,.08);color:var(--gray);border:1px solid var(--line);}
-.status.error .row,.step.error .row,.raw.error .row,.info.error .row{color:var(--red);
-background:rgba(255,92,92,.08);border:1px solid rgba(255,92,92,.4);box-shadow:0 0 10px rgba(255,92,92,.15);}
-.status.error .tag{background:rgba(255,92,92,.15);color:var(--red);border:1px solid var(--red);}
-.info .row{color:var(--green-dim);font-style:italic;font-size:12px;}
-.raw .row{color:var(--gray);font-size:11px;}
-.module>.head,.loop>.head{display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 10px;
-border-radius:5px;user-select:none;}
+.status.error .row,.step.error .row{color:var(--red);background:rgba(255,92,92,.08);border:1px solid rgba(255,92,92,.4);}
+.module>.head,.loop>.head{display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 10px;border-radius:5px;}
 .module>.head{color:var(--cyan);background:rgba(111,215,232,.05);border:1px solid rgba(111,215,232,.25);}
 .loop>.head{color:var(--amber);background:rgba(255,179,71,.06);border:1px dashed rgba(255,179,71,.45);}
-.module>.head .badge,.loop>.head .badge{margin-left:auto;font-size:10px;color:var(--gray);}
 .caret{width:10px;display:inline-block;transition:transform .15s;}
 .module.collapsed>.children,.loop.collapsed>.children{display:none;}
 .module.collapsed>.head .caret,.loop.collapsed>.head .caret{transform:rotate(-90deg);}
-.loop>.children{border-left:2px dashed rgba(255,179,71,.35);}
-.sample-label{font-size:10px;color:var(--gray);margin:4px 0 0 20px;letter-spacing:1px;text-transform:uppercase;}
-.msgsum{font-size:10px;color:var(--gray);margin:4px 0 0 20px;}
-.detail{margin:2px 0 2px 26px;font-size:11px;color:var(--green-dim);opacity:.85;}
-.detail .ts{color:var(--gray);margin-right:8px;}
-.omitted .row{color:var(--gray);font-style:italic;border:1px dashed var(--line);}
-.explain{margin:2px 0 4px 26px;font-size:11px;color:var(--gray);font-style:italic;opacity:.9;}
-.explain::before{content:'\203a ';color:var(--gray);}
-.mod-explain{font-size:10.5px;color:var(--gray);font-style:italic;margin:4px 0 0 20px;}
-body.hide-explain .explain,body.hide-explain .mod-explain{display:none;}
-.narrative{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--green);
-border-radius:5px;padding:14px 16px;margin-bottom:16px;font-size:12.5px;line-height:1.6;color:var(--text);}
-.narrative h3{margin:0 0 8px;font-size:11px;letter-spacing:2px;color:var(--green);text-transform:uppercase;}
-button{background:var(--panel2);color:var(--green);border:1px solid var(--line);border-radius:4px;
-padding:6px 9px;font-family:inherit;font-size:11px;cursor:pointer;margin:2px 4px 8px 0;}
-button:hover{border-color:var(--green);}
-button.toggled{color:var(--amber);border-color:var(--amber);}
-
+.explain{margin:2px 0 4px 26px;font-size:11px;color:var(--gray);font-style:italic;}
+body.hide-explain .explain{display:none;}
+.narrative{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:5px;padding:14px 16px;margin-bottom:16px;}
 .tabs{display:flex;gap:6px;margin-bottom:14px;}
-.tabbtn{background:var(--panel2);color:var(--gray);border:1px solid var(--line);border-radius:5px 5px 0 0;
-padding:8px 16px;font-family:inherit;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
-.tabbtn.active{color:var(--green);border-color:var(--green);border-bottom:2px solid var(--bg);background:var(--panel);}
+.tabbtn{background:var(--panel2);color:var(--gray);border:1px solid var(--line);border-radius:5px 5px 0 0;padding:8px 16px;cursor:pointer;}
+.tabbtn.active{color:var(--green);background:var(--panel);border-bottom:2px solid var(--bg);}
 .view{display:none;} .view.active{display:block;}
-
-.crumbs{font-size:11px;color:var(--gray);margin-bottom:14px;padding:8px 10px;background:var(--panel);
-border:1px solid var(--line);border-radius:5px;}
-.crumbs span.crumb{cursor:pointer;color:var(--cyan);} .crumbs span.crumb:hover{text-decoration:underline;}
-.crumbs .sep{color:var(--gray);margin:0 6px;}
+.crumbs{font-size:11px;color:var(--gray);margin-bottom:14px;padding:8px 10px;background:var(--panel);border:1px solid var(--line);border-radius:5px;}
 
 .flowcols{display:flex;gap:20px;align-items:flex-start;}
 .flowdiagram{flex:1;min-width:0;}
-.canvas-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:11px;color:var(--gray);}
-.canvas-toolbar button{margin:0;padding:5px 10px;}
-.canvas-toolbar .zoomlabel{color:var(--text);min-width:44px;text-align:center;}
-.canvas-toolbar .hint{margin-left:auto;color:var(--gray);font-style:italic;}
-.flow-canvas-wrap{position:relative;height:70vh;border:1px solid var(--line);border-radius:6px;
-overflow:hidden;background:radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);background-size:22px 22px;
-cursor:grab;}
+.canvas-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:11px;}
+.flow-canvas-wrap{position:relative;height:75vh;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--bg);cursor:grab;}
 .flow-canvas-wrap.dragging{cursor:grabbing;}
 .flow-canvas{position:absolute;top:0;left:0;transform-origin:0 0;}
 .connectors{position:absolute;top:0;left:0;pointer-events:none;overflow:visible;}
-.flowbox{position:absolute;border:1.5px solid var(--line);border-radius:6px;padding:8px 12px;
-cursor:pointer;background:var(--panel2);display:flex;align-items:center;gap:8px;
-transition:box-shadow .1s,border-color .1s;box-sizing:border-box;overflow:hidden;}
+.flowbox{position:absolute;border:1.5px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer;background:var(--panel2);display:flex;align-items:center;gap:8px;box-sizing:border-box;}
 .flowbox:hover{box-shadow:0 0 0 1px var(--green);z-index:5;}
-.flowbox.active-hover{box-shadow:0 0 0 2px var(--green);z-index:5;}
 .flowbox .lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;}
 .flowbox.t-module{border-color:rgba(111,215,232,.5);color:var(--cyan);background:rgba(111,215,232,.05);}
-.flowbox.t-step{color:var(--text);}
 .flowbox.t-status-success{color:var(--green);border-color:rgba(77,255,136,.35);}
-.flowbox.t-status-neutral{color:var(--gray);}
 .flowbox.t-error{color:var(--red);border-color:var(--red);box-shadow:0 0 10px rgba(255,92,92,.15);}
-.flowbox .count-badge{flex:0 0 auto;font-size:9px;color:var(--gray);background:var(--bg);border:1px solid var(--line);
-border-radius:8px;padding:1px 6px;}
-.flowbox .shape-icon{flex:0 0 auto;font-size:11px;opacity:.8;}
-.flow-empty{color:var(--gray);text-align:center;padding:30px;font-style:italic;}
-.flow-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:10.5px;color:var(--gray);margin-bottom:10px;
-padding:8px 10px;border:1px solid var(--line);border-radius:5px;background:var(--panel);}
-.flow-legend .lg{display:flex;align-items:center;gap:5px;}
-.flow-legend .sw{width:10px;height:10px;border-radius:2px;display:inline-block;}
-
-.logpreview{flex:0 0 380px;position:sticky;top:18px;background:#050705;border:1px solid var(--line);
-border-radius:6px;padding:12px;font-size:11px;color:var(--green-dim);white-space:pre-wrap;word-break:break-word;
-max-height:80vh;overflow:auto;}
-.logpreview h4{margin:0 0 8px;font-size:10px;letter-spacing:2px;color:var(--green);text-transform:uppercase;}
-.logpreview .lp-empty{color:var(--gray);font-style:italic;}
-.logpreview .lp-name{color:var(--cyan);margin-bottom:6px;display:block;}
+.logpreview{flex:0 0 380px;position:sticky;top:18px;background:#050705;border:1px solid var(--line);border-radius:6px;padding:12px;font-size:11px;max-height:80vh;overflow:auto;}
+.logpreview h4{margin:0 0 8px;color:var(--green);text-transform:uppercase;}
 </style></head>
 <body>
 <div class="wrap">
   <div class="sidebar">
-    <div class="brand"><div class="t1">TRACEVIEW</div><div class="t2">FLOW REPORT</div></div>
+    <div class="brand"><div class="t2">TRACEVIEW REPORT</div></div>
     <div id="stats"></div>
     <div class="errbox" id="errbox"></div>
   </div>
   <div class="main">
     <div class="headerbar"><h1 id="ht"></h1><div class="sub" id="hs"></div></div>
-    <div class="narrative" id="narrative"><h3>What happened</h3><div id="narrativeText"></div></div>
+    <div class="narrative" id="narrative"><h3>Execution Narrative</h3><div id="narrativeText"></div></div>
     <div class="tabs">
       <button class="tabbtn active" id="tabTreeBtn">Tree View</button>
-      <button class="tabbtn" id="tabFlowBtn">Flow Diagram</button>
+      <button class="tabbtn" id="tabFlowBtn">Vertical Flow Diagram</button>
     </div>
 
     <div class="view active" id="viewTree">
-      <div>
-        <button onclick="document.querySelectorAll('.module.collapsed,.loop.collapsed').forEach(n=>n.classList.remove('collapsed'))">Expand all</button>
-        <button onclick="document.querySelectorAll('.module,.loop').forEach(n=>n.classList.add('collapsed'))">Collapse all</button>
-        <button id="explainToggle">Hide explanations</button>
-      </div>
       <div class="flow" id="flow"></div>
     </div>
 
     <div class="view" id="viewFlow">
       <div class="crumbs" id="crumbs"></div>
-      <div class="flow-legend">
-        <span class="lg"><span class="sw" style="background:var(--cyan)"></span>Call (module entry)</span>
-        <span class="lg"><span class="sw" style="background:var(--amber)"></span>Loop-back edge</span>
-        <span class="lg"><span class="sw" style="background:var(--red)"></span>Error branch</span>
-        <span class="lg"><span class="sw" style="background:#7fb894"></span>Normal sequence</span>
-      </div>
       <div class="flowcols">
         <div class="flowdiagram">
           <div class="canvas-toolbar">
             <button id="zoomOutBtn">\u2212</button>
-            <span class="zoomlabel" id="zoomLabel">100%</span>
+            <span id="zoomLabel">100%</span>
             <button id="zoomInBtn">+</button>
             <button id="zoomResetBtn">Reset view</button>
-            <span class="hint">Scroll to zoom &middot; Drag to pan</span>
           </div>
           <div class="flow-canvas-wrap" id="flowWrap">
             <div class="flow-canvas" id="flowCanvas">
@@ -791,132 +606,54 @@ max-height:80vh;overflow:auto;}
           </div>
         </div>
         <div class="logpreview" id="logPreview">
-          <h4>Log Preview</h4>
-          <div class="lp-empty">Hover or tap a block to see the log lines behind it.</div>
+          <h4>Execution Context</h4>
+          <div id="lp-body">Hover or select a vertical pipeline box to parse log fragments.</div>
         </div>
       </div>
     </div>
-
   </div>
 </div>
 <script>
 const DATA = __DATA_JSON__;
-
 function esc(s){return (s+'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function el(tag,cls,html){const e=document.createElement(tag); if(cls)e.className=cls; if(html!==undefined)e.innerHTML=html; return e;}
-
-function renderDetails(node){
-  const frag = document.createDocumentFragment();
-  (node.details||[]).forEach(d=>frag.appendChild(el('div','detail',`<span class="ts">${esc(d.ts)}</span>${esc(d.msg)}`)));
-  return frag;
-}
-
-function renderExplain(node){
-  return node.explain ? el('div','explain', esc(node.explain)) : null;
-}
 
 function renderNode(node){
   if(node.type==='module'){
     const wrap = el('div','node module collapsed');
-    const head = el('div','head', `<span class="caret">\u25be</span><span>CALL \u203a ${esc(node.name)}</span><span class="badge">${node.children.length} item${node.children.length===1?'':'s'}</span>`);
+    const head = el('div','head', `<span>\u25be CALL \u203a ${esc(node.name)}</span>`);
     head.addEventListener('click',()=>wrap.classList.toggle('collapsed'));
     const kids = el('div','children');
-    if(node.explain) kids.appendChild(el('div','mod-explain', esc(node.explain)));
     node.children.forEach(c=>kids.appendChild(renderNode(c)));
-    wrap.appendChild(head); wrap.appendChild(kids); return wrap;
-  }
-  if(node.type==='loop'){
-    const wrap = el('div','node loop collapsed');
-    const head = el('div','head', `<span class="caret">\u25be</span><span>LOOP \u00d7${node.count}</span><span class="badge">period ${node.period} \u00b7 ${(node.count-1)*node.period} collapsed</span>`);
-    head.addEventListener('click',()=>wrap.classList.toggle('collapsed'));
-    const kids = el('div','children');
-    if(node.explain) kids.appendChild(el('div','mod-explain', esc(node.explain)));
-    kids.appendChild(el('div','sample-label','Sample iteration \u2193'));
-    node.children.forEach(c=>kids.appendChild(renderNode(c)));
-    if(node.message_summary && node.message_summary.length){
-      const s = node.message_summary.map(m=>`${esc(m[0])} \u00d7${m[1]}`).join('; ');
-      kids.appendChild(el('div','msgsum','Messages seen across loop: '+s));
-    }
     wrap.appendChild(head); wrap.appendChild(kids); return wrap;
   }
   if(node.type==='step'){
     const wrap = el('div','node step'+(node.error?' error':''));
     wrap.appendChild(el('div','row',`<span class="tag">PARA</span><span>${esc(node.name)}</span>`));
-    const ex = renderExplain(node); if(ex) wrap.appendChild(ex);
-    wrap.appendChild(renderDetails(node)); return wrap;
+    return wrap;
   }
   if(node.type==='status'){
     const wrap = el('div','node status '+node.cls);
-    const tag = node.cls==='error'?'ERROR':(node.cls==='success'?'OK':'STATUS');
-    wrap.appendChild(el('div','row',`<span class="tag">${tag}</span><span>${esc(node.program)}(${esc(node.para)}) \u2014 ${esc(node.message)}</span>`));
-    const ex = renderExplain(node); if(ex) wrap.appendChild(ex);
-    wrap.appendChild(renderDetails(node)); return wrap;
-  }
-  if(node.type==='info'){
-    const wrap = el('div','node info'+(node.error?' error':''));
-    wrap.appendChild(renderDetails(node)); return wrap;
-  }
-  if(node.type==='omitted'){
-    const wrap = el('div','node omitted');
-    wrap.appendChild(el('div','row', `\u2026 ${node.count} steps omitted from view` + (node.errors? ` (includes ${node.errors} error${node.errors===1?'':'s'} \u2014 see Error Index)`:'') + ' \u2026'));
+    wrap.appendChild(el('div','row',`<span class="tag">STATUS</span><span>${esc(node.program)}(${esc(node.para)}) — ${esc(node.message)}</span>`));
     return wrap;
   }
-  const wrap = el('div','node raw'+(node.error?' error':''));
-  wrap.appendChild(el('div','row',esc(node.text))); return wrap;
+  return el('div','node raw',esc(node.text||''));
 }
 
-document.getElementById('ht').textContent = (DATA.header.program? 'PROGRAM '+DATA.header.program : 'TRACE') + ' \u2014 Execution Flow';
+document.getElementById('ht').textContent = (DATA.header.program? 'PROGRAM '+DATA.header.program : 'TRACE LOG EXECUTION');
 document.getElementById('hs').textContent = (DATA.header.start_at||'?') + '  \u2192  ' + (DATA.header.end_at||'?');
 document.getElementById('narrativeText').textContent = DATA.narrative || '';
 
-document.getElementById('explainToggle').addEventListener('click', (e)=>{
-  document.body.classList.toggle('hide-explain');
-  e.target.textContent = document.body.classList.contains('hide-explain') ? 'Show explanations' : 'Hide explanations';
-  e.target.classList.toggle('toggled');
-});
-
-// ---------------------------------------------------------------------
-// Graph view: each distinct paragraph/status/module is ONE node,
-// positioned inside structural columns of their active module.
-// ---------------------------------------------------------------------
-const GRAPH = DATA.graph || {nodes:[], edges:[], width:0, height:0, box_w:210, box_h:44, truncated:false};
-const OFF_X = 50, OFF_Y = 40;
+const GRAPH = DATA.graph || {nodes:[], edges:[], width:0, height:0, box_w:220, box_h:46};
+const OFF_X = 60, OFF_Y = 50;
 const nodeByKey = {};
 GRAPH.nodes.forEach(n => nodeByKey[n.key] = n);
 
-document.getElementById('crumbs').textContent =
-  `${GRAPH.nodes.length} distinct paragraph/status node${GRAPH.nodes.length===1?'':'s'} \u00b7 ` +
-  `${GRAPH.edges.length} transition${GRAPH.edges.length===1?'':'s'} observed` +
-  (GRAPH.truncated ? '  \u2014  \u26a0 node cap reached, graph truncated' : '');
-
-function shapeIconFor(n){
-  if(n.kind==='module') return '\u25b8';
-  if(n.error) return '\u25c6';
-  if(n.kind==='status') return '\u25cf';
-  return '\u25ab';
-}
-function boxClassFor(n){
-  if(n.error) return 't-error';
-  if(n.kind==='module') return 't-module';
-  if(n.kind==='status') return n.label && /success|good|complet|commit/i.test((n.messages[0]||[''])[0]) ? 't-status-success' : 't-status-neutral';
-  return 't-step';
-}
 function labelFor(n){ return (n.kind==='module' ? 'CALL \u203a ' : '') + n.label; }
 
 function showLogPreview(n){
-  const p = document.getElementById('logPreview');
-  let body = '';
-  if(n.kind === 'status'){
-    body = (n.messages||[]).map(([msg,cnt]) => `${esc(msg)}  \u00d7${cnt}`).join('\n');
-  } else if(n.kind === 'module'){
-    body = `START OF ${esc(n.label)}\n... (called ${n.count} time${n.count===1?'':'s'} in this trace)`;
-  } else {
-    body = `${esc(n.label)}\n(executed ${n.count} time${n.count===1?'':'s'})`;
-  }
-  p.innerHTML = '<h4>Log Preview</h4><span class="lp-name">' + esc(labelFor(n)) + '</span>' +
-                `<div style="color:var(--gray);margin-bottom:6px;">First seen at line ${n.first_line} \u00b7 occurred ${n.count}\u00d7</div>` +
-                (n.explain ? '<div style="color:var(--gray);font-style:italic;margin-bottom:8px;">' + esc(n.explain) + '</div>' : '') +
-                esc(body);
+  const body = document.getElementById('lp-body');
+  body.innerHTML = `<strong>${esc(labelFor(n))}</strong><br><br>First invoked at log line: ${n.first_line}<br>Total executions: ${n.count}<br><br><em>${esc(n.explain||'')}</em>`;
 }
 
 function edgeColor(kind){
@@ -929,15 +666,13 @@ function edgeColor(kind){
 function drawEdges(){
   const svg = document.getElementById('flowSvg');
   svg.innerHTML = '';
-  const w = GRAPH.width + OFF_X*2 + GRAPH.box_w, h = GRAPH.height + OFF_Y*2 + GRAPH.box_h + 60;
+  const w = GRAPH.width + OFF_X*2 + GRAPH.box_w, h = GRAPH.height + OFF_Y*2 + GRAPH.box_h + 100;
   svg.setAttribute('width', w); svg.setAttribute('height', h);
-  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
   const NS = 'http://www.w3.org/2000/svg';
   const defs = document.createElementNS(NS,'defs');
   ['ERROR','CALL','LOOP','NEXT'].forEach(kind=>{
     const color = kind==='NEXT' ? edgeColor('') : edgeColor(kind);
-    defs.innerHTML += `<marker id="arrow-${kind}" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
-      <path d="M0,0 L9,4.5 L0,9 Z" fill="${color}"/></marker>`;
+    defs.innerHTML += `<marker id="arrow-${kind}" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="${color}"/></marker>`;
   });
   svg.appendChild(defs);
 
@@ -946,90 +681,51 @@ function drawEdges(){
     const a = nodeByKey[e.from], b = nodeByKey[e.to];
     if(!a || !b) return;
     const color = edgeColor(e.kind);
-    const markerId = e.kind || 'NEXT';
     const path = document.createElementNS(NS,'path');
-    let d, labelX, labelY;
+    let d;
 
+    // Redesigned Top-to-Bottom Curved Segment Interconnectors
     if(a.key === b.key){
       const x = a.x+OFF_X+bw, y = a.y+OFF_Y+bh/2;
-      d = `M ${x} ${y-10} C ${x+34} ${y-24}, ${x+34} ${y+24}, ${x} ${y+10}`;
-      labelX = x+30; labelY = y;
-    } else if(e.kind === 'LOOP' || b.layer <= a.layer){
-      const x1 = a.x+OFF_X+bw/2, y1 = a.y+OFF_Y+bh;
-      const x2 = b.x+OFF_X+bw/2, y2 = b.y+OFF_Y+bh;
-      const dip = Math.max(y1,y2) + 46;
-      d = `M ${x1} ${y1} C ${x1} ${dip}, ${x2} ${dip}, ${x2} ${y2}`;
-      labelX = (x1+x2)/2; labelY = dip - 6;
+      d = `M ${x} ${y-8} C ${x+30} ${y-20}, ${x+30} ${y+20}, ${x} ${y+8}`;
+    } else if(a.layer === b.layer){
+      // Pure vertical downward step sequence
+      const x = a.x+OFF_X+bw/2;
+      d = `M ${x} ${a.y+OFF_Y+bh} L ${x} ${b.y+OFF_Y}`;
     } else {
-      const x1 = a.x+OFF_X+bw, y1 = a.y+OFF_Y+bh/2;
-      const x2 = b.x+OFF_X, y2 = b.y+OFF_Y+bh/2;
-      const midX = (x1+x2)/2;
-      d = `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2-9} ${y2}`;
-      labelX = midX; labelY = (y1+y2)/2;
+      // Cross swimlane branch connectivity routing (Top-to-Bottom curves)
+      const x1 = a.x+OFF_X+bw/2, y1 = a.y+OFF_Y+bh;
+      const x2 = b.x+OFF_X+bw/2, y2 = b.y+OFF_Y;
+      const midY = (y1+y2)/2;
+      d = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2-4}`;
     }
     path.setAttribute('d', d);
     path.setAttribute('fill','none');
     path.setAttribute('stroke', color);
-    path.setAttribute('stroke-width', e.kind==='ERROR' ? 2.2 : 1.4);
-    if(e.kind==='LOOP') path.setAttribute('stroke-dasharray','5,4');
-    path.setAttribute('marker-end', `url(#arrow-${markerId})`);
+    path.setAttribute('stroke-width', e.kind==='ERROR' ? 2.2 : 1.5);
+    path.setAttribute('marker-end', `url(#arrow-${e.kind || 'NEXT'})`);
     svg.appendChild(path);
-
-    let label = '';
-    if(e.kind==='CALL') label = 'CALL';
-    else if(e.kind==='ERROR') label = 'ERROR';
-    else if(e.kind==='LOOP') label = '\u00d7' + e.count;
-    if(label){
-      const bgw = Math.max(24, label.length*6.4);
-      const bg = document.createElementNS(NS,'rect');
-      bg.setAttribute('x', labelX-bgw/2); bg.setAttribute('y', labelY-8);
-      bg.setAttribute('width', bgw); bg.setAttribute('height', 14); bg.setAttribute('rx', 3);
-      bg.setAttribute('fill', '#080b08');
-      svg.appendChild(bg);
-      const text = document.createElementNS(NS,'text');
-      text.setAttribute('x', labelX); text.setAttribute('y', labelY+3);
-      text.setAttribute('text-anchor','middle'); text.setAttribute('font-size','9.5');
-      text.setAttribute('font-family','ui-monospace, monospace'); text.setAttribute('fill', color);
-      text.textContent = label;
-      svg.appendChild(text);
-    }
   });
 }
 
 function renderFlowDiagram(){
   const canvas = document.getElementById('flowCanvas');
   canvas.querySelectorAll('.flowbox').forEach(b=>b.remove());
-  if(!GRAPH.nodes.length){
-    canvas.appendChild(el('div','flow-empty','No recognizable paragraph/status structure found.'));
-    return;
-  }
-  const w = GRAPH.width + OFF_X*2 + GRAPH.box_w, h = GRAPH.height + OFF_Y*2 + GRAPH.box_h + 60;
+  const w = GRAPH.width + OFF_X*2 + GRAPH.box_w, h = GRAPH.height + OFF_Y*2 + GRAPH.box_h + 100;
   canvas.style.width = w+'px'; canvas.style.height = h+'px';
 
   GRAPH.nodes.forEach(n=>{
-    const box = el('div', 'flowbox ' + boxClassFor(n));
+    const box = el('div', 'flowbox ' + (n.error?'t-error':(n.kind==='module'?'t-module':'')));
     box.style.left = (n.x+OFF_X)+'px'; box.style.top = (n.y+OFF_Y)+'px';
     box.style.width = GRAPH.box_w+'px'; box.style.height = GRAPH.box_h+'px';
-    box.appendChild(el('span','shape-icon', shapeIconFor(n)));
     box.appendChild(el('span','lbl', esc(labelFor(n))));
-    if(n.count > 1) box.appendChild(el('span','count-badge', '\u00d7'+n.count));
-    box.title = n.label;
-    box.addEventListener('mouseenter', ()=>{
-      document.querySelectorAll('.flowbox.active-hover').forEach(b=>b.classList.remove('active-hover'));
-      box.classList.add('active-hover');
-      showLogPreview(n);
-    });
-    box.addEventListener('click', ()=> showLogPreview(n));
+    box.addEventListener('mouseenter', ()=> { showLogPreview(n); });
     canvas.appendChild(box);
   });
-
   drawEdges();
   resetView();
 }
 
-// ---------------------------------------------------------------------
-// Pan & zoom controller
-// ---------------------------------------------------------------------
 const view = {scale:1, x:20, y:20};
 function applyView(){
   const canvas = document.getElementById('flowCanvas');
@@ -1037,12 +733,7 @@ function applyView(){
   document.getElementById('zoomLabel').textContent = Math.round(view.scale*100) + '%';
 }
 function resetView(){
-  view.scale = 1; view.x = 20; view.y = 20;
-  const wrap = document.getElementById('flowWrap');
-  const wrapW = wrap.clientWidth;
-  const graphW = GRAPH.width + OFF_X*2 + GRAPH.box_w;
-  if(graphW > wrapW && graphW > 0) view.scale = clampScale(wrapW / graphW * 0.92);
-  applyView();
+  view.scale = 0.9; view.x = 30; view.y = 30; applyView();
 }
 function clampScale(s){ return Math.min(3, Math.max(0.15, s)); }
 
@@ -1052,7 +743,7 @@ function clampScale(s){ return Math.min(3, Math.max(0.15, s)); }
     e.preventDefault();
     const rect = wrap.getBoundingClientRect();
     const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-    const newScale = clampScale(view.scale * (e.deltaY < 0 ? 1.12 : 0.89));
+    const newScale = clampScale(view.scale * (e.deltaY < 0 ? 1.1 : 0.9));
     view.x = mx - (mx - view.x) * (newScale/view.scale);
     view.y = my - (my - view.y) * (newScale/view.scale);
     view.scale = newScale;
@@ -1062,18 +753,13 @@ function clampScale(s){ return Math.min(3, Math.max(0.15, s)); }
   let dragging = false, startX=0, startY=0, origX=0, origY=0;
   wrap.addEventListener('mousedown', (e)=>{
     if(e.target.closest('.flowbox')) return;
-    dragging = true;
-    wrap.classList.add('dragging');
-    startX = e.clientX; startY = e.clientY; origX = view.x; origY = view.y;
+    dragging = true; startX = e.clientX; startY = e.clientY; origX = view.x; origY = view.y;
   });
   window.addEventListener('mousemove', (e)=>{
     if(!dragging) return;
-    view.x = origX + (e.clientX - startX);
-    view.y = origY + (e.clientY - startY);
-    applyView();
+    view.x = origX + (e.clientX - startX); view.y = origY + (e.clientY - startY); applyView();
   });
-  window.addEventListener('mouseup', ()=>{ dragging=false; wrap.classList.remove('dragging'); });
-
+  window.addEventListener('mouseup', ()=>{ dragging=false; });
   document.getElementById('zoomInBtn').addEventListener('click', ()=>{ view.scale = clampScale(view.scale*1.2); applyView(); });
   document.getElementById('zoomOutBtn').addEventListener('click', ()=>{ view.scale = clampScale(view.scale*0.8); applyView(); });
   document.getElementById('zoomResetBtn').addEventListener('click', resetView);
@@ -1084,46 +770,17 @@ function switchTab(which){
   document.getElementById('tabFlowBtn').classList.toggle('active', which==='flow');
   document.getElementById('viewTree').classList.toggle('active', which==='tree');
   document.getElementById('viewFlow').classList.toggle('active', which==='flow');
-  if(which==='flow' && !document.getElementById('flowCanvas').querySelector('.flowbox')){
-    renderFlowDiagram();
-  }
+  if(which==='flow') renderFlowDiagram();
 }
 document.getElementById('tabTreeBtn').addEventListener('click', ()=>switchTab('tree'));
 document.getElementById('tabFlowBtn').addEventListener('click', ()=>switchTab('flow'));
 
-const rc = DATA.header.rc;
-const rcBad = rc!==null && rc!==undefined && parseInt(rc,10)!==0;
 const s = DATA.stats;
-const rows = [
-  ['Return code', rc!==null&&rc!==undefined?rc:'\u2014', rc===null?'':(rcBad?'bad':'ok')],
-  ['Lines processed', s.lines, ''],
-  ['Steps', s.steps, ''],
-  ['Status lines', s.status, ''],
-  ['Module calls', s.modules, ''],
-  ['Errors found', s.errors, s.errors?'bad':'ok'],
-  ['Loops collapsed', s.loops, ''],
-  ['Iterations saved', s.iter_saved, ''],
-  ['Parse time', s.elapsed.toFixed(1)+'s', ''],
-  ['Throughput', (s.bytes/1048576/Math.max(s.elapsed,0.001)).toFixed(1)+' MB/s', ''],
-];
 const statsEl = document.getElementById('stats');
-rows.forEach(([k,v,cls])=>statsEl.appendChild(el('div','stat '+cls,`<span class="k">${k}</span><span class="v">${v}</span>`)));
-
-const errbox = document.getElementById('errbox');
-if(DATA.errors.length){
-  errbox.appendChild(el('h3',null,'Error Index ('+DATA.errors.length+')'));
-  DATA.errors.slice(0,500).forEach(e=>{
-    errbox.appendChild(el('div','erritem',`<span class="ln">L${e.line}</span> ${esc(e.para||'')} ${esc(e.message)}`));
-  });
-  if(DATA.errors.length>500) errbox.appendChild(el('div','erritem','...and '+(DATA.errors.length-500)+' more (see errors.txt)'));
-}
+[['Lines parsed', s.lines], ['Errors', s.errors], ['Execution Steps', s.steps]].forEach(([k,v])=>statsEl.appendChild(el('div','stat',`<span class="k">${k}</span><span class="v">${v}</span>`)));
 
 const flow = document.getElementById('flow');
-if(!DATA.root.children.length){
-  flow.appendChild(el('div',null,'No recognizable trace structure found.'));
-} else {
-  DATA.root.children.forEach(c=>flow.appendChild(renderNode(c)));
-}
+DATA.root.children.forEach(c=>flow.appendChild(renderNode(c)));
 </script>
 </body></html>
 '''
@@ -1139,9 +796,7 @@ def render_html(root, header, error_index, stats, graph_json, out_path):
         'errors': error_index,
         'narrative': narrative,
         'graph': layout,
-        'stats': {k: stats.get(k, 0) for k in
-                   ('lines', 'steps', 'status', 'modules', 'errors', 'loops', 'iter_saved', 'elapsed', 'bytes',
-                    'graph_nodes', 'graph_edges')},
+        'stats': {k: stats.get(k, 0) for k in ('lines', 'steps', 'status', 'modules', 'errors', 'loops', 'iter_saved', 'elapsed', 'bytes')},
     }
     payload = json.dumps(data, separators=(',', ':'))
     out = HTML_TEMPLATE.replace('__DATA_JSON__', payload).replace('__PROGRAM__', html.escape(header.get('program') or 'TRACE'))
@@ -1153,55 +808,29 @@ def render_html(root, header, error_index, stats, graph_json, out_path):
 def write_error_file(error_index, path):
     with open(path, 'w', encoding='utf-8') as f:
         for e in error_index:
-            ts = (e['ts'] + '  ') if e.get('ts') else ''
-            para = (e['para'] + ': ') if e.get('para') else ''
-            f.write(f"[line {e['line']}] {ts}{para}{e['message']}\n")
+            f.write(f"[line {e['line']}] {e['message']}\n")
 
 
-# ---------------------------------------------------------------------------
 def main():
-    ap = argparse.ArgumentParser(description='Streaming visualizer for mainframe trace logs (handles GB-scale files).')
-    ap.add_argument('input', help='path to the trace log file')
-    ap.add_argument('-o', '--output', default=None, help='output HTML report path (default: <input>.report.html)')
-    ap.add_argument('--errors', default=None, help='output plain-text error index path (default: <input>.errors.txt)')
-    ap.add_argument('--max-children', type=int, default=DEFAULT_MAX_CHILDREN, help='cap on rendered siblings per call frame')
-    ap.add_argument('--flush-size', type=int, default=DEFAULT_FLUSH_SIZE, help='buffer size before mid-stream loop collapse')
-    ap.add_argument('--max-period', type=int, default=DEFAULT_MAX_PERIOD, help='longest repeating unit to detect as a loop')
-    ap.add_argument('--stats-only', action='store_true', help='parse and print stats only, skip HTML/error file output')
-    ap.add_argument('--quiet', action='store_true', help='suppress progress output')
+    ap = argparse.ArgumentParser()
+    ap.add_argument('input')
+    ap.add_argument('-o', '--output', default=None)
+    ap.add_argument('--errors', default=None)
+    ap.add_argument('--max-children', type=int, default=DEFAULT_MAX_CHILDREN)
+    ap.add_argument('--flush-size', type=int, default=DEFAULT_FLUSH_SIZE)
+    ap.add_argument('--max-period', type=int, default=DEFAULT_MAX_PERIOD)
+    ap.add_argument('--stats-only', action='store_true')
     args = ap.parse_args()
 
     out_html = args.output or (args.input + '.report.html')
     out_err = args.errors or (args.input + '.errors.txt')
 
-    root, header, error_index, stats, graph_json = parse_stream(
-        args.input, max_period=args.max_period, flush_size=args.flush_size,
-        progress=not args.quiet)
+    root, header, error_index, stats, graph_json = parse_stream(args.input, max_period=args.max_period, flush_size=args.flush_size, progress=False)
 
-    print(f"Program        : {header.get('program')}")
-    print(f"Start / End    : {header.get('start_at')}  ->  {header.get('end_at')}")
-    print(f"Return code    : {header.get('rc')}")
-    print(f"Lines parsed   : {stats['lines']:,}   ({stats['bytes']/1048576:.1f} MB)")
-    print(f"Steps / Status : {stats['steps']:,} / {stats['status']:,}")
-    print(f"Module calls   : {stats['modules']:,}")
-    print(f"Errors found   : {stats['errors']:,}")
-    print(f"Loops collapsed: {stats['loops']:,}  (iterations saved: {stats['iter_saved']:,})")
-    print(f"Distinct nodes : {stats['graph_nodes']:,}  (graph edges: {stats['graph_edges']:,})")
-    print(f"Parse time     : {stats['elapsed']:.2f}s  ({stats['bytes']/1048576/max(stats['elapsed'],1e-6):.1f} MB/s)")
-    if stats['unmatched_end']:
-        print(f"Warning: {stats['unmatched_end']} unmatched 'END OF' lines encountered.")
-
-    if args.stats_only:
-        return
-
+    if args.stats_only: return
     cap_children(root, args.max_children)
-    narrative = render_html(root, header, error_index, stats, graph_json, out_html)
+    render_html(root, header, error_index, stats, graph_json, out_html)
     write_error_file(error_index, out_err)
-    print("\n--- What happened -----------------------------------------")
-    print(narrative)
-    print("-------------------------------------------------------------")
-    print(f"\nHTML report -> {out_html}")
-    print(f"Error index -> {out_err}")
 
 
 if __name__ == '__main__':
