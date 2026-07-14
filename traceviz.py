@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 traceviz.py - Streaming visualizer for mainframe / COBOL DBIO trace logs.
-Hierarchical Call Tree Flowchart Edition.
+Chronological Sequence & Nested Indentation Layout Edition.
 """
 
 import argparse
@@ -90,13 +90,12 @@ def collapse_loops(nodes, max_period, stats):
 
 
 class Frame:
-    __slots__ = ('name', 'children', 'buffer', 'line_no')
+    __slots__ = ('name', 'children', 'buffer')
 
-    def __init__(self, name, line_no=0):
+    def __init__(self, name):
         self.name = name
         self.children = []
         self.buffer = []
-        self.line_no = line_no
 
 
 def flush_frame(frame, max_period, stats, final=False, tail_keep=DEFAULT_TAIL_KEEP):
@@ -151,16 +150,16 @@ GLOSSARY = [
     (r'ROLLBACK',              'Undoing uncommitted database changes.'),
     (r'INITIALI[SZ]E|^INIT',   'One-time setup for this routine (work areas, counters, defaults).'),
     (r'VALIDATE',              'Checking that input values are valid before continuing.'),
-    (r'RETRIEVE',              'Pulling a control block or configuration value.'),
+    (r'RETRIEVE',              'Pulling a control block or configuration value (often from shared memory or the DB).'),
     (r'ATTACH-SHMEM',          'Attaching to a shared-memory segment used for cross-process control blocks.'),
     (r'SHMEM',                 'Working with a shared-memory segment.'),
     (r'ENV-VAR',               'Reading an operating-system environment variable.'),
-    (r'TRANSLATE-STATUS',      "Converting the database driver's raw return code into status codes."),
+    (r'TRANSLATE-STATUS',      "Converting the database driver's raw return code into the application's own status code."),
     (r'EVALUATE-FILE-NAME',    'Working out which physical file or table this request applies to.'),
     (r'PROCESS-RECORD',        'Doing the per-row work on the record that was just fetched.'),
     (r'GET-DATE',              'Reading the current system date/time.'),
     (r'GET-SYSTEM-NO',         'Determining which system/instance number this run is executing under.'),
-    (r'SET-APPLICATION-NAME',  'Tagging this DB session with an application name.'),
+    (r'SET-APPLICATION-NAME',  'Tagging this DB session with an application name (helps DBA-side tracing).'),
     (r'SETTXCON|TXCON',        'Setting up transaction/connection context for subsequent SQL calls.'),
     (r'DISPLAY',               'Writing a trace/debug line — diagnostic output, not business logic.'),
     (r'FINALISE|FINALIZE',     'Tearing down / releasing resources this routine acquired.'),
@@ -172,8 +171,8 @@ GLOSSARY = [
 GLOSSARY = [(re.compile(pat, re.I), text) for pat, text in GLOSSARY]
 
 MODULE_HINTS = [
-    (re.compile(r'^UT\d', re.I), 'Naming suggests a shared utility routine.'),
-    (re.compile(r'^DBIO', re.I), 'Naming suggests this is the DBIO layer mediating SQL calls.'),
+    (re.compile(r'^UT\d', re.I), 'Naming suggests a shared utility routine, commonly reused across programs for housekeeping tasks.'),
+    (re.compile(r'^DBIO', re.I), 'Naming suggests this is the DBIO layer that mediates SQL calls.'),
     (re.compile(r'^IOMISC', re.I), 'Naming suggests a miscellaneous I/O helper module.'),
 ]
 
@@ -194,16 +193,19 @@ def explain_module(name):
     for pat, text in MODULE_HINTS:
         if pat.search(name):
             return text
-    return 'Custom site routine block.'
+    return 'Custom/site-specific routine — exact business purpose can\'t be inferred from the trace alone.'
 
 
 def explain_error_message(message):
     m = re.search(r'CURSOR FETCH ERROR\.?0*(\d+)', message, re.I)
     if m:
-        return f'A cursor FETCH failed. Return code driver flag: {m.group(1)}.'
+        code = m.group(1)
+        return f'A cursor FETCH failed. Return driver code: {code}.'
     if re.search(r'ABEND', message, re.I):
-        return 'The program terminated abnormally (an ABEND).'
-    return 'An error condition was logged here.'
+        return 'The program terminated abnormally (an ABEND) — check system log codes.'
+    if re.search(r'TIMEOUT|TIME OUT', message, re.I):
+        return 'The operation exceeded its allotted time scheduler window.'
+    return 'An error condition was reported here.'
 
 
 def annotate_tree(node):
@@ -225,38 +227,110 @@ def annotate_tree(node):
     return node
 
 
+def _walk_order(node, statuses, loops):
+    for c in node['children']:
+        if c['type'] == 'status':
+            statuses.append(c)
+        elif c['type'] == 'loop':
+            loops.append(c)
+            _walk_order(c, statuses, loops)
+        elif c['type'] == 'module':
+            _walk_order(c, statuses, loops)
+
+
 def build_narrative(root, header, stats, error_index):
-    sentences = [f"Program {header.get('program') or 'Job'} started at {header.get('start_at') or 'the top'}.",
-                 f"Processed {stats['lines']:,} trace entries down through nested operational boundaries."]
+    statuses, loops = [], []
+    _walk_order(root, statuses, loops)
+    sentences = []
+    prog = header.get('program') or 'The program'
+    sentences.append(f"{prog} started at {header.get('start_at') or 'an unknown time'}.")
     if error_index:
-        sentences.append(f"An anomaly was detected on line {error_index[0]['line']}: \"{error_index[0]['message']}\".")
-    if header.get('rc') is not None:
-        sentences.append(f"Execution completed with Return Code status flag: {header.get('rc')}.")
+        sentences.append(f"On line {error_index[0]['line']}, an anomaly occurred: \"{error_index[0]['message']}\"")
+    rc = header.get('rc')
+    if rc is not None:
+        sentences.append(f"The job completed with return code {rc}.")
     return ' '.join(sentences)
 
 
-# ---------------------------------------------------------------------------
-# Tree Parser
-# ---------------------------------------------------------------------------
+class StreamGraph:
+    """Builds a purely chronological step array to replicate paper design execution."""
+    def __init__(self):
+        self.steps = [] 
+        self.edges = []
+        self.last_idx = None
+
+    def add(self, kind, label, depth, error=False, message=None, line_no=0):
+        idx = len(self.steps)
+        explain = explain_error_message(message) if (error and message) else (explain_module(label) if kind == 'module' else explain_text(label, message))
+        
+        self.steps.append({
+            'key': f"step_{idx}",
+            'kind': kind,
+            'label': label,
+            'depth': depth,
+            'error': error,
+            'count': 1,
+            'first_line': line_no,
+            'explain': explain,
+            'messages': [[message, 1]] if message else []
+        })
+        
+        if self.last_idx is not None:
+            self.edges.append({
+                'from': f"step_{self.last_idx}",
+                'to': f"step_{idx}",
+                'kind': 'ERROR' if error else '',
+                'count': 1
+            })
+        self.last_idx = idx
+
+
+def compute_layout(graph_json, indent_w=140, step_y=70, box_w=240, box_h=46):
+    """
+    Computes visual matrix locations from chronological indices.
+    X-axis maps directly to the active nesting level depth (matches paper indentation sketch).
+    Y-axis moves downwards item-by-item in exact historical execution sequence.
+    """
+    nodes = graph_json['nodes']
+    for idx, n in enumerate(nodes):
+        n['x'] = n['depth'] * indent_w
+        n['y'] = idx * step_y
+        n['layer'] = n['depth']
+        
+    return {'nodes': nodes, 'edges': graph_json['edges'],
+            'truncated': False, 'box_w': box_w, 'box_h': box_h,
+            'width': max((n['x'] for n in nodes), default=0) + box_w + 100, 
+            'height': len(nodes) * step_y + 100}
+
+
 def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_SIZE,
-                  tail_keep=DEFAULT_TAIL_KEEP, max_details=DEFAULT_MAX_DETAILS,
-                  progress=True):
+                  tail_keep=DEFAULT_TAIL_KEEP, max_details=DEFAULT_MAX_DETAILS, progress=True):
     root_frame = Frame('ROOT')
     stack = [root_frame]
     header = {'program': None, 'start_at': None, 'end_at': None, 'rc': None}
     error_index = []
     stats = {'lines': 0, 'steps': 0, 'status': 0, 'errors': 0, 'modules': 0, 'loops': 0, 'iter_saved': 0, 'unmatched_end': 0}
+    graph = StreamGraph()
 
     t0 = time.time()
     bytes_read = 0
+    file_size = None
+    try:
+        import os
+        file_size = os.path.getsize(path)
+    except OSError:
+        pass
 
     with open(path, 'r', encoding='utf-8', errors='replace') as f:
         for line_no, raw in enumerate(f, 1):
             bytes_read += len(raw)
             line = raw.strip()
             stats['lines'] = line_no
-            if not line:
-                continue
+            if not line: continue
+
+            if progress and line_no % 200000 == 0:
+                pct = (bytes_read / file_size * 100) if file_size else 0
+                if callable(progress): progress(line_no, pct, time.time() - t0, stats)
 
             frame = stack[-1]
 
@@ -272,33 +346,22 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                 if m:
                     header['program'] = header['program'] or m.group(1)
                     header['end_at'] = m.group(2).strip()
-                    if m.group(3) is not None:
-                        header['rc'] = m.group(3).strip()
+                    if m.group(3) is not None: header['rc'] = m.group(3).strip()
                     continue
                 continue
 
             if line.startswith('START OF '):
                 name = line[9:].strip()
-                new_frame = Frame(name, line_no=line_no)
-                stack.append(new_frame)
+                stack.append(Frame(name))
                 stats['modules'] += 1
+                graph.add('module', name, len(stack) - 2, line_no=line_no)
                 continue
 
             if line.startswith('END OF '):
-                name = line[7:].strip()
-                # Unwind accurately to support missing ends safely (like your UT9004 example)
-                match_idx = -1
-                for idx in range(len(stack)-1, 0, -1):
-                    if stack[idx].name == name:
-                        match_idx = idx
-                        break
-                
-                if match_idx != -1:
-                    while len(stack) > match_idx:
-                        finished = stack.pop()
-                        flush_frame(finished, max_period, stats, final=True, tail_keep=tail_keep)
-                        node = {'type': 'module', 'name': finished.name, 'children': finished.children, 'line_no': finished.line_no, 'closed': (len(stack) >= match_idx)}
-                        stack[-1].buffer.append(node)
+                if len(stack) > 1:
+                    finished = stack.pop()
+                    flush_frame(finished, max_period, stats, final=True, tail_keep=tail_keep)
+                    stack[-1].buffer.append({'type': 'module', 'name': finished.name, 'children': finished.children})
                 else:
                     stats['unmatched_end'] += 1
                 continue
@@ -311,14 +374,13 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                 err = is_error_text(msg)
                 if last is not None and last['type'] in ('step', 'status'):
                     details = last.setdefault('details', [])
-                    if len(details) < max_details:
-                        details.append({'ts': ts, 'msg': msg})
+                    if len(details) < max_details: details.append({'ts': ts, 'msg': msg})
                     if err:
                         last['error'] = True
                         error_index.append({'line': line_no, 'para': last.get('name') or last.get('para'), 'message': msg, 'ts': ts})
                         stats['errors'] += 1
                 else:
-                    node = {'type': 'info', 'details': [{'ts': ts, 'msg': msg}], 'line_no': line_no}
+                    node = {'type': 'info', 'details': [{'ts': ts, 'msg': msg}]}
                     if err:
                         node['error'] = True
                         error_index.append({'line': line_no, 'para': None, 'message': msg, 'ts': ts})
@@ -331,20 +393,22 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                 prog, para, msg = m.group(1), m.group(2), m.group(3)
                 err = is_error_text(msg)
                 ok = bool(re.search(r'success|good|complet|commit', msg, re.I)) and not err
-                frame.buffer.append({'type': 'status', 'program': prog, 'para': para, 'message': msg, 'line_no': line_no, 'cls': 'error' if err else ('success' if ok else 'neutral')})
+                frame.buffer.append({'type': 'status', 'program': prog, 'para': para, 'message': msg, 'cls': 'error' if err else ('success' if ok else 'neutral')})
                 stats['status'] += 1
                 if err:
                     error_index.append({'line': line_no, 'para': para, 'message': msg, 'ts': None})
                     stats['errors'] += 1
+                graph.add('status', para, len(stack) - 1, error=err, message=msg, line_no=line_no)
                 continue
 
             if RE_PARA.match(line):
-                frame.buffer.append({'type': 'step', 'name': line, 'line_no': line_no})
+                frame.buffer.append({'type': 'step', 'name': line})
                 stats['steps'] += 1
+                graph.add('step', line, len(stack) - 1, line_no=line_no)
                 continue
 
             err = is_error_text(line)
-            node = {'type': 'raw', 'text': line, 'line_no': line_no}
+            node = {'type': 'raw', 'text': line}
             if err:
                 node['error'] = True
                 error_index.append({'line': line_no, 'para': None, 'message': line, 'ts': None})
@@ -354,132 +418,19 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
     while len(stack) > 1:
         finished = stack.pop()
         flush_frame(finished, max_period, stats, final=True, tail_keep=tail_keep)
-        stack[-1].buffer.append({'type': 'module', 'name': finished.name + ' (unclosed)', 'children': finished.children, 'line_no': finished.line_no, 'closed': False})
+        stack[-1].buffer.append({'type': 'module', 'name': finished.name + ' (unclosed)', 'children': finished.children})
 
     flush_frame(root_frame, max_period, stats, final=True, tail_keep=tail_keep)
     root = {'type': 'root', 'name': 'ROOT', 'children': root_frame.children}
     stats['elapsed'] = time.time() - t0
     stats['bytes'] = bytes_read
-    return root, header, error_index, stats, {}
+    stats['graph_nodes'] = len(graph.steps)
+    stats['graph_edges'] = len(graph.edges)
+    return root, header, error_index, stats, {'nodes': graph.steps, 'edges': graph.edges}
 
 
 # ---------------------------------------------------------------------------
-# Chronological Tree to Flow Diagram Translator
-# ---------------------------------------------------------------------------
-def generate_tree_flow(root, step_x=280, step_y=75):
-    """
-    Transforms the compiled call tree directly into a precise visual grid map.
-    Matches your paper structure perfectly:
-      - Depth layer maps directly to Column positions (X axis)
-      - Execution timeline assigns vertical steps chronologically (Y axis)
-    """
-    flat_nodes = []
-    edges = []
-    
-    global_y = 0
-    
-    def traverse(node, depth, parent_key=None):
-        nonlocal global_y
-        if node['type'] == 'root':
-            for child in node['children']:
-                traverse(child, depth, None)
-            return
-
-        current_key = f"N_{global_y}_{node.get('name') or node.get('para') or node.get('type')}"
-        
-        # Determine classification flags safely
-        is_mod = (node['type'] == 'module')
-        is_err = node.get('error', False) or (node.get('cls') == 'error')
-        lbl = node.get('name') or node.get('para') or node.get('type')
-        
-        # Re-attach semantic gloss annotations
-        if is_mod:
-            explain = explain_module(lbl)
-        else:
-            explain = explain_text(lbl, node.get('message'))
-            
-        messages_list = []
-        if node.get('message'):
-            messages_list.append([node['message'], 1])
-
-        flow_node = {
-            'key': current_key,
-            'kind': 'module' if is_mod else ('status' if node['type']=='status' else 'step'),
-            'label': lbl,
-            'error': is_err,
-            'count': node.get('count', 1),
-            'messages': messages_list,
-            'first_line': node.get('line_no', 0),
-            'explain': explain,
-            'x': depth * step_x,
-            'y': global_y * step_y,
-            'layer': depth
-        }
-        flat_nodes.append(flow_node)
-        global_y += 1
-
-        # Chain sequence lines downward sequentially
-        if len(flat_nodes) > 1:
-            prev_node = flat_nodes[-2]
-            ekind = 'CALL' if is_mod else ''
-            if prev_node['error'] or is_err:
-                ekind = 'ERROR'
-            edges.append({
-                'from': prev_node['key'],
-                'to': current_key,
-                'count': 1,
-                'kind': ekind
-            })
-
-        if 'children' in node:
-            for child in node['children']:
-                traverse(child, depth + 1, current_key)
-                
-    traverse(root, 0)
-    
-    max_x = (max([n['layer'] for n in flat_nodes], default=0) + 1) * step_x
-    max_y = global_y * step_y
-    
-    return {
-        'nodes': flat_nodes,
-        'edges': edges,
-        'truncated': False,
-        'box_w': 240,
-        'box_h': 46,
-        'width': max_x,
-        'height': max_y
-    }
-
-
-def render_html(root, header, error_index, stats, out_path):
-    annotate_tree(root)
-    narrative = build_narrative(root, header, stats, error_index)
-    
-    # Translate layout directly using the call tree generator
-    layout = generate_tree_flow(root)
-    
-    data = {
-        'root': root,
-        'header': header,
-        'errors': error_index,
-        'narrative': narrative,
-        'graph': layout,
-        'stats': {k: stats.get(k, 0) for k in ('lines', 'steps', 'status', 'modules', 'errors', 'loops', 'iter_saved', 'elapsed', 'bytes')},
-    }
-    payload = json.dumps(data, separators=(',', ':'))
-    out = HTML_TEMPLATE.replace('__DATA_JSON__', payload).replace('__PROGRAM__', html.escape(header.get('program') or 'TRACE'))
-    with open(out_path, 'w', encoding='utf-8') as f:
-        f.write(out)
-    return narrative
-
-
-def write_error_file(error_index, path):
-    with open(path, 'w', encoding='utf-8') as f:
-        for e in error_index:
-            f.write(f"[line {e['line']}] {e['message']}\n")
-
-# ---------------------------------------------------------------------------
-# HTML Core UI Presentation Layout
+# Full HTML Presentation Engine Template
 # ---------------------------------------------------------------------------
 HTML_TEMPLATE = r'''<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><title>TRACEVIEW // __PROGRAM__</title>
@@ -491,7 +442,7 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospa
 .wrap{display:flex;min-height:100vh;}
 .sidebar{width:340px;flex:0 0 340px;background:var(--panel);border-right:1px solid var(--line);padding:18px;position:sticky;top:0;height:100vh;overflow-y:auto;}
 .brand .t1{font-size:11px;letter-spacing:3px;color:var(--gray);text-transform:uppercase;}
-.brand .t2{font-size:20px;color:var(--green);font-weight:700;margin-bottom:14px;}
+.brand .t2{font-size:20px;color:var(--green);font-weight:700;letter-spacing:1px;margin-bottom:14px;}
 .stat{display:flex;justify-content:space-between;padding:5px 0;font-size:11px;border-bottom:1px dashed var(--line);}
 .stat .k{color:var(--gray);text-transform:uppercase;font-size:10px;}
 .stat .v{color:var(--text);font-weight:600;}
@@ -505,9 +456,11 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospa
 .node{position:relative;margin:6px 0;}
 .children{margin-left:20px;padding-left:18px;border-left:2px solid var(--line);margin-top:6px;}
 .row{display:flex;align-items:flex-start;gap:8px;padding:5px 10px;border-radius:4px;}
-.row .tag{font-size:9px;padding:1px 5px;border-radius:3px;flex:0 0 auto;}
-.step .tag{color:var(--cyan);border:1px solid rgba(111,215,232,.25);}
+.row .tag{font-size:9px;padding:1px 5px;border-radius:3px;flex:0 0 auto;margin-top:1px;}
+.step .tag{background:rgba(111,215,232,.08);color:var(--cyan);border:1px solid rgba(111,215,232,.25);}
 .status.success .row{color:var(--green);}
+.status.success .tag{background:rgba(77,255,136,.1);color:var(--green);border:1px solid rgba(77,255,136,.3);}
+.status.neutral .tag{background:rgba(140,140,140,.08);color:var(--gray);border:1px solid var(--line);}
 .status.error .row,.step.error .row{color:var(--red);background:rgba(255,92,92,.08);border:1px solid rgba(255,92,92,.4);}
 .module>.head,.loop>.head{display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 10px;border-radius:5px;}
 .module>.head{color:var(--cyan);background:rgba(111,215,232,.05);border:1px solid rgba(111,215,232,.25);}
@@ -517,19 +470,23 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospa
 .module.collapsed>.children,.loop.collapsed>.children{display:none;}
 .module.collapsed>.head .caret,.loop.collapsed>.head .caret{transform:rotate(-90deg);}
 .explain{margin:2px 0 4px 26px;font-size:11px;color:var(--gray);font-style:italic;}
+.explain::before{content:'\203a ';color:var(--gray);}
 .mod-explain{font-size:10.5px;color:var(--gray);font-style:italic;margin:4px 0 0 20px;}
 body.hide-explain .explain,body.hide-explain .mod-explain{display:none;}
-.narrative{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:5px;padding:14px 16px;margin-bottom:16px;}
-.tabs{display:flex;gap:6px;margin-bottom:14px;}
-.tabbtn{background:var(--panel2);color:var(--gray);border:1px solid var(--line);border-radius:5px 5px 0 0;padding:8px 16px;cursor:pointer;}
-.tabbtn.active{color:var(--green);background:var(--panel);border-bottom:2px solid var(--bg);}
-.view{display:none;} .view.active{display:block;}
-.crumbs{font-size:11px;color:var(--gray);margin-bottom:14px;padding:8px 10px;background:var(--panel);border:1px solid var(--line);border-radius:5px;}
+.narrative{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:5px;padding:14px 16px;margin-bottom:16px;font-size:12.5px;line-height:1.6;}
+.narrative h3{margin:0 0 8px;font-size:11px;color:var(--green);text-transform:uppercase;}
+button{background:var(--panel2);color:var(--green);border:1px solid var(--line);border-radius:4px;padding:6px 9px;cursor:pointer;margin:2px 4px 8px 0;}
 
+.tabs{display:flex;gap:6px;margin-bottom:14px;}
+.tabbtn{background:var(--panel2);color:var(--gray);border:1px solid var(--line);border-radius:5px 5px 0 0;padding:8px 16px;cursor:pointer;text-transform:uppercase;}
+.tabbtn.active{color:var(--green);border-bottom:2px solid var(--bg);background:var(--panel);}
+.view{display:none;} .view.active{display:block;}
+
+.crumbs{font-size:11px;color:var(--gray);margin-bottom:14px;padding:8px 10px;background:var(--panel);border:1px solid var(--line);border-radius:5px;}
 .flowcols{display:flex;gap:20px;align-items:flex-start;}
 .flowdiagram{flex:1;min-width:0;}
 .canvas-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:11px;}
-.flow-canvas-wrap{position:relative;height:75vh;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--bg);cursor:grab;}
+.flow-canvas-wrap{position:relative;height:72vh;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--bg);cursor:grab;}
 .flow-canvas-wrap.dragging{cursor:grabbing;}
 .flow-canvas{position:absolute;top:0;left:0;transform-origin:0 0;}
 .connectors{position:absolute;top:0;left:0;pointer-events:none;overflow:visible;}
@@ -537,9 +494,10 @@ body.hide-explain .explain,body.hide-explain .mod-explain{display:none;}
 .flowbox:hover{box-shadow:0 0 0 1px var(--green);z-index:5;}
 .flowbox .lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;}
 .flowbox.t-module{border-color:rgba(111,215,232,.5);color:var(--cyan);background:rgba(111,215,232,.05);}
+.flowbox.t-step{color:var(--text);}
 .flowbox.t-status-success{color:var(--green);border-color:rgba(77,255,136,.35);}
 .flowbox.t-error{color:var(--red);border-color:var(--red);box-shadow:0 0 10px rgba(255,92,92,.15);}
-.logpreview{flex:0 0 380px;position:sticky;top:18px;background:#050705;border:1px solid var(--line);border-radius:6px;padding:12px;font-size:11px;max-height:80vh;overflow:auto;}
+.logpreview{flex:0 0 380px;position:sticky;top:18px;background:#050705;border:1px solid var(--line);border-radius:6px;padding:12px;font-size:11px;color:var(--green-dim);max-height:80vh;overflow:auto;}
 .logpreview h4{margin:0 0 8px;color:var(--green);text-transform:uppercase;}
 </style></head>
 <body>
@@ -584,7 +542,7 @@ body.hide-explain .explain,body.hide-explain .mod-explain{display:none;}
         </div>
         <div class="logpreview" id="logPreview">
           <h4>Execution Context</h4>
-          <div id="lp-body">Hover or select a vertical pipeline box to parse log fragments.</div>
+          <div id="lp-body">Hover or select a vertical pipeline block to track log properties.</div>
         </div>
       </div>
     </div>
@@ -595,25 +553,10 @@ const DATA = __DATA_JSON__;
 function esc(s){return (s+'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function el(tag,cls,html){const e=document.createElement(tag); if(cls)e.className=cls; if(html!==undefined)e.innerHTML=html; return e;}
 
-function renderDetails(node){
-  const frag = document.createDocumentFragment();
-  (node.details||[]).forEach(d=>frag.appendChild(el('div','detail',`<span class="ts">${esc(d.ts)}</span>${esc(d.msg)}`)));
-  return frag;
-}
-
 function renderNode(node){
   if(node.type==='module'){
     const wrap = el('div','node module collapsed');
-    const head = el('div','head', `<span class="caret">\u25be</span><span>CALL \u203a ${esc(node.name)}</span><span class="badge">${node.children.length} items</span>`);
-    head.addEventListener('click',()=>wrap.classList.toggle('collapsed'));
-    const kids = el('div','children');
-    if(node.explain) kids.appendChild(el('div','mod-explain', esc(node.explain)));
-    node.children.forEach(c=>kids.appendChild(renderNode(c)));
-    wrap.appendChild(head); wrap.appendChild(kids); return wrap;
-  }
-  if(node.type==='loop'){
-    const wrap = el('div','node loop collapsed');
-    const head = el('div','head', `<span class="caret">\u25be</span><span>LOOP \u00d7${node.count}</span>`);
+    const head = el('div','head', `<span class="caret">\u25be</span><span>CALL \u203a ${esc(node.name)}</span>`);
     head.addEventListener('click',()=>wrap.classList.toggle('collapsed'));
     const kids = el('div','children');
     node.children.forEach(c=>kids.appendChild(renderNode(c)));
@@ -622,12 +565,12 @@ function renderNode(node){
   if(node.type==='step'){
     const wrap = el('div','node step'+(node.error?' error':''));
     wrap.appendChild(el('div','row',`<span class="tag">PARA</span><span>${esc(node.name)}</span>`));
-    wrap.appendChild(renderDetails(node)); return wrap;
+    return wrap;
   }
   if(node.type==='status'){
     const wrap = el('div','node status '+node.cls);
     wrap.appendChild(el('div','row',`<span class="tag">STATUS</span><span>${esc(node.program)}(${esc(node.para)}) — ${esc(node.message)}</span>`));
-    wrap.appendChild(renderDetails(node)); return wrap;
+    return wrap;
   }
   return el('div','node raw',esc(node.text||''));
 }
@@ -637,23 +580,21 @@ document.getElementById('hs').textContent = (DATA.header.start_at||'?') + '  \u2
 document.getElementById('narrativeText').textContent = DATA.narrative || '';
 
 const GRAPH = DATA.graph || {nodes:[], edges:[], width:0, height:0, box_w:240, box_h:46};
-const OFF_X = 60, OFF_Y = 50;
+const OFF_X = 60, OFF_Y = 40;
 const nodeByKey = {};
 GRAPH.nodes.forEach(n => nodeByKey[n.key] = n);
 
-document.getElementById('crumbs').textContent = `${GRAPH.nodes.length} call instances mapped sequentially down timeline columns.`;
+document.getElementById('crumbs').textContent = `${GRAPH.nodes.length} sequential execution timeline blocks processed.`;
 
 function labelFor(n){ return (n.kind==='module' ? 'CALL \u203a ' : '') + n.label; }
 
 function showLogPreview(n){
   const body = document.getElementById('lp-body');
-  body.innerHTML = `<strong>${esc(labelFor(n))}</strong><br><br>First invoked at log line: ${n.first_line}<br><br><em>${esc(n.explain||'')}</em>`;
-}
-
-function edgeColor(kind){
-  if(kind==='ERROR') return '#ff5c5c';
-  if(kind==='CALL') return '#6fd7e8';
-  return '#5b7a63';
+  let msgs = '';
+  if(n.messages && n.messages.length) {
+    msgs = '<br><br><strong>Log Output:</strong><br>' + n.messages.map(m=>esc(m[0])).join('\n');
+  }
+  body.innerHTML = `<strong>${esc(labelFor(n))}</strong><br><br>Invoked at trace line: ${n.first_line}<br>Indentation Depth Level: ${n.depth}<br><br><em>${esc(n.explain||'')}</em>${msgs}`;
 }
 
 function drawEdges(){
@@ -664,33 +605,30 @@ function drawEdges(){
   const NS = 'http://www.w3.org/2000/svg';
   
   const defs = document.createElementNS(NS,'defs');
-  ['ERROR','CALL','NEXT'].forEach(kind=>{
-    const color = kind==='NEXT' ? edgeColor('') : edgeColor(kind);
-    defs.innerHTML += `<marker id="arrow-${kind}" markerWidth="9" markerHeight="9" refX="5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="${color}"/></marker>`;
-  });
+  defs.innerHTML = `<marker id="arrow-NEXT" markerWidth="9" markerHeight="9" refX="5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#5b7a63"/></marker>` +
+                   `<marker id="arrow-ERROR" markerWidth="9" markerHeight="9" refX="5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#ff5c5c"/></marker>`;
   svg.appendChild(defs);
 
   const bw = GRAPH.box_w, bh = GRAPH.box_h;
   GRAPH.edges.forEach(e=>{
     const a = nodeByKey[e.from], b = nodeByKey[e.to];
     if(!a || !b) return;
-    const color = edgeColor(e.kind);
+    const color = e.kind==='ERROR' ? '#ff5c5c' : '#5b7a63';
     const path = document.createElementNS(NS,'path');
     let d;
 
     if(a.layer === b.layer){
-      // Same lane straight down connection line
-      const x = a.x+OFF_X+bw/2;
+      // Same level sequence step down
+      const x = a.x + OFF_X + bw/2;
       d = `M ${x} ${a.y+OFF_Y+bh} L ${x} ${b.y+OFF_Y}`;
     } else {
-      // Orthogonal Routing through intermediate grid channels
-      const xStart = (b.layer > a.layer) ? (a.x + OFF_X + bw) : (a.x + OFF_X);
-      const yStart = a.y + OFF_Y + bh / 2;
-      const xEnd = (b.layer > a.layer) ? (b.x + OFF_X) : (b.x + OFF_X + bw);
-      const yEnd = b.y + OFF_Y + bh / 2;
+      // Orthogonal Lane Drop Channel Routing matching hand-drawn schema lines
+      const xStart = a.x + OFF_X + bw/2;
+      const yStart = a.y + OFF_Y + bh;
+      const xEnd = b.x + OFF_X + bw/2;
+      const yEnd = b.y + OFF_Y;
       
-      const midX = xStart + (xEnd - xStart) * 0.45;
-      d = `M ${xStart} ${yStart} H ${midX} V ${yEnd} H ${xEnd}`;
+      d = `M ${xStart} ${yStart} V ${(yStart+yEnd)/2} H ${xEnd} V ${yEnd}`;
     }
     path.setAttribute('d', d);
     path.setAttribute('fill','none');
@@ -708,7 +646,12 @@ function renderFlowDiagram(){
   canvas.style.width = w+'px'; canvas.style.height = h+'px';
 
   GRAPH.nodes.forEach(n=>{
-    const box = el('div', 'flowbox ' + (n.error?'t-error':(n.kind==='module'?'t-module':'')));
+    let cls = 't-step';
+    if(n.error) cls = 't-error';
+    else if(n.kind==='module') cls = 't-module';
+    else if(n.kind==='status' && /success|good|complet|commit/i.test((n.messages[0]||[''])[0])) cls = 't-status-success';
+    
+    const box = el('div', 'flowbox ' + cls);
     box.style.left = (n.x+OFF_X)+'px'; box.style.top = (n.y+OFF_Y)+'px';
     box.style.width = GRAPH.box_w+'px'; box.style.height = GRAPH.box_h+'px';
     box.appendChild(el('span','lbl', esc(labelFor(n))));
@@ -726,7 +669,7 @@ function applyView(){
   document.getElementById('zoomLabel').textContent = Math.round(view.scale*100) + '%';
 }
 function resetView(){
-  view.scale = 0.8; view.x = 40; view.y = 40; applyView();
+  view.scale = 0.85; view.x = 30; view.y = 30; applyView();
 }
 function clampScale(s){ return Math.min(3, Math.max(0.15, s)); }
 
@@ -778,7 +721,10 @@ const rows = [
   ['Status lines', s.status, ''],
   ['Module calls', s.modules, ''],
   ['Errors found', s.errors, s.errors?'bad':'ok'],
+  ['Loops collapsed', s.loops, ''],
+  ['Iterations saved', s.iter_saved, ''],
   ['Parse time', s.elapsed.toFixed(1)+'s', ''],
+  ['Throughput', (s.bytes/1048576/Math.max(s.elapsed,0.001)).toFixed(1)+' MB/s', ''],
 ];
 const statsEl = document.getElementById('stats');
 rows.forEach(([k,v,cls])=>statsEl.appendChild(el('div','stat '+cls,`<span class="k">${k}</span><span class="v">${v}</span>`)));
@@ -786,8 +732,8 @@ rows.forEach(([k,v,cls])=>statsEl.appendChild(el('div','stat '+cls,`<span class=
 const errbox = document.getElementById('errbox');
 if(DATA.errors.length){
   errbox.appendChild(el('h3',null,'Error Index ('+DATA.errors.length+')'));
-  DATA.errors.forEach(e=>{
-    errbox.appendChild(el('div','erritem',`<span>L${e.line}</span> — ${esc(e.message)}`));
+  DATA.errors.slice(0,500).forEach(e=>{
+    errbox.appendChild(el('div','erritem',`<span>L${e.line}</span> ${esc(e.message)}`));
   });
 }
 
@@ -796,6 +742,31 @@ DATA.root.children.forEach(c=>flow.appendChild(renderNode(c)));
 </script>
 </body></html>
 '''
+
+
+def render_html(root, header, error_index, stats, graph_json, out_path):
+    annotate_tree(root)
+    narrative = build_narrative(root, header, stats, error_index)
+    layout = compute_layout(graph_json)
+    data = {
+        'root': root,
+        'header': header,
+        'errors': error_index,
+        'narrative': narrative,
+        'graph': layout,
+        'stats': {k: stats.get(k, 0) for k in ('lines', 'steps', 'status', 'modules', 'errors', 'loops', 'iter_saved', 'elapsed', 'bytes')},
+    }
+    payload = json.dumps(data, separators=(',', ':'))
+    out = HTML_TEMPLATE.replace('__DATA_JSON__', payload).replace('__PROGRAM__', html.escape(header.get('program') or 'TRACE'))
+    with open(out_path, 'w', encoding='utf-8') as f:
+        f.write(out)
+    return narrative
+
+
+def write_error_file(error_index, path):
+    with open(path, 'w', encoding='utf-8') as f:
+        for e in error_index:
+            f.write(f"[line {e['line']}] {e['message']}\n")
 
 
 def main():
@@ -812,11 +783,11 @@ def main():
     out_html = args.output or (args.input + '.report.html')
     out_err = args.errors or (args.input + '.errors.txt')
 
-    root, header, error_index, stats, _ = parse_stream(args.input, max_period=args.max_period, flush_size=args.flush_size, progress=False)
+    root, header, error_index, stats, graph_json = parse_stream(args.input, max_period=args.max_period, flush_size=args.flush_size, progress=False)
 
     if args.stats_only: return
     cap_children(root, args.max_children)
-    render_html(root, header, error_index, stats, out_html)
+    render_html(root, header, error_index, stats, graph_json, out_html)
     write_error_file(error_index, out_err)
 
 
