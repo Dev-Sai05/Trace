@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 traceviz.py - Streaming visualizer for mainframe / COBOL DBIO trace logs.
-Chronological Sequence & Nested Indentation Layout (Accurate Open Module Termination).
+Three-Tab Edition: Tree View, Vertical Flow Diagram, and Code Pipeline View.
 """
 
 import argparse
@@ -193,19 +193,19 @@ def explain_module(name):
     for pat, text in MODULE_HINTS:
         if pat.search(name):
             return text
-    return 'Custom/site-specific routine — exact business purpose can\'t be inferred from the trace alone.'
+    return 'Custom site paragraph execution logic block.'
 
 
 def explain_error_message(message):
     m = re.search(r'CURSOR FETCH ERROR\.?0*(\d+)', message, re.I)
     if m:
         code = m.group(1)
-        return f'A cursor FETCH failed. Return driver code: {code}.'
+        return f'A cursor FETCH failed. Underlying database SQLCODE: {code}.'
     if re.search(r'ABEND', message, re.I):
-        return 'The program terminated abnormally (an ABEND) — check system log codes.'
+        return 'The program terminated abnormally via an ABEND condition.'
     if re.search(r'TIMEOUT|TIME OUT', message, re.I):
-        return 'The operation exceeded its allotted time scheduler window.'
-    return 'An error condition was reported here.'
+        return 'The operation exceeded its allocated execution scheduler threshold.'
+    return 'An error condition was flagged here.'
 
 
 def annotate_tree(node):
@@ -275,16 +275,18 @@ class StreamGraph:
         })
         
         if self.last_idx is not None:
+            # Determine line identity: Cross-program calls vs standard local jumps
+            is_cross_call = (self.steps[self.last_idx]['depth'] != depth) or (kind == 'module')
             self.edges.append({
                 'from': f"step_{self.last_idx}",
                 'to': f"step_{idx}",
-                'kind': 'ERROR' if error else '',
+                'kind': 'ERROR' if error else ('CALL' if is_cross_call else 'NEXT'),
                 'count': 1
             })
         self.last_idx = idx
 
 
-def compute_layout(graph_json, indent_w=140, step_y=70, box_w=240, box_h=46):
+def compute_layout(graph_json, indent_w=140, step_y=75, box_w=240, box_h=46):
     nodes = graph_json['nodes']
     for idx, n in enumerate(nodes):
         n['x'] = n['depth'] * indent_w
@@ -356,7 +358,6 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                     finished = stack.pop()
                     flush_frame(finished, max_period, stats, final=True, tail_keep=tail_keep)
                     stack[-1].buffer.append({'type': 'module', 'name': finished.name, 'children': finished.children})
-                    # Re-instated explicit closure node only when matching log patterns are found
                     graph.add('module_end', f"END OF {finished.name}", len(stack) - 1, line_no=line_no)
                 else:
                     stats['unmatched_end'] += 1
@@ -411,7 +412,6 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                 stats['errors'] += 1
             frame.buffer.append(node)
 
-    # REMOVED: No more graph.add('module_end') inside this loop to preserve open paths accurately!
     while len(stack) > 1:
         finished = stack.pop()
         flush_frame(finished, max_period, stats, final=True, tail_keep=tail_keep)
@@ -419,7 +419,6 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
 
     flush_frame(root_frame, max_period, stats, final=True, tail_keep=tail_keep)
     
-    # Check if program ended properly or aborted
     if header.get('end_at'):
         prog_id = header['program'] or "PROGRAM"
         graph.add('program_end', f"END OF {prog_id}", 0, line_no=line_no)
@@ -433,7 +432,7 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
 
 
 # ---------------------------------------------------------------------------
-# HTML template config with active overflow scroll blocks
+# HTML Presentation Template Layout Engine Config
 # ---------------------------------------------------------------------------
 HTML_TEMPLATE = r'''<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><title>TRACEVIEW // __PROGRAM__</title>
@@ -444,10 +443,9 @@ HTML_TEMPLATE = r'''<!DOCTYPE html>
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospace,"SF Mono",monospace;font-size:13px;height:100vh;}
 .wrap{display:flex;height:100vh;overflow:hidden;}
 .sidebar{width:340px;flex:0 0 340px;background:var(--panel);border-right:1px solid var(--line);padding:18px;height:100vh;overflow-y:auto;}
-.brand .t1{font-size:11px;letter-spacing:3px;color:var(--gray);text-transform:uppercase;}
-.brand .t2{font-size:20px;color:var(--green);font-weight:700;letter-spacing:1px;margin-bottom:14px;}
+.brand .t2{font-size:20px;color:var(--green);font-weight:700;margin-bottom:14px;}
 .stat{display:flex;justify-content:space-between;padding:5px 0;font-size:11px;border-bottom:1px dashed var(--line);}
-.stat .k{color:var(--gray);text-transform:uppercase;letter-spacing:1px;font-size:10px;}
+.stat .k{color:var(--gray);text-transform:uppercase;font-size:10px;}
 .stat .v{color:var(--text);font-weight:600;}
 .stat.bad .v{color:var(--red);} .stat.ok .v{color:var(--green);}
 .errbox{margin-top:16px;border-top:1px solid var(--line);padding-top:10px;}
@@ -462,19 +460,15 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospa
 .row .tag{font-size:9px;padding:1px 5px;border-radius:3px;flex:0 0 auto;margin-top:1px;}
 .step .tag{background:rgba(111,215,232,.08);color:var(--cyan);border:1px solid rgba(111,215,232,.25);}
 .status.success .row{color:var(--green);}
-.status.success .tag{background:rgba(77,255,136,.1);color:var(--green);border:1px solid rgba(77,255,136,.3);}
-.status.neutral .tag{background:rgba(140,140,140,.08);color:var(--gray);border:1px solid var(--line);}
 .status.error .row,.step.error .row{color:var(--red);background:rgba(255,92,92,.08);border:1px solid rgba(255,92,92,.4);}
-.module>.head,.loop>.head{display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 10px;border-radius:5px;}
+.module>.head{display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 10px;border-radius:5px;}
 .module>.head{color:var(--cyan);background:rgba(111,215,232,.05);border:1px solid rgba(111,215,232,.25);}
-.loop>.head{color:var(--amber);background:rgba(255,179,71,.06);border:1px dashed rgba(255,179,71,.45);}
 .caret{width:10px;display:inline-block;transition:transform .15s;}
-.module.collapsed>.children,.loop.collapsed>.children{display:none;}
-.module.collapsed>.head .caret,.loop.collapsed>.head .caret{transform:rotate(-90deg);}
+.module.collapsed>.children{display:none;}
+.module.collapsed>.head .caret{transform:rotate(-90deg);}
 .explain{margin:2px 0 4px 26px;font-size:11px;color:var(--gray);font-style:italic;}
 .explain::before{content:'\203a ';color:var(--gray);}
-body.hide-explain .explain{display:none;}
-.narrative{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:5px;padding:14px 16px;margin-bottom:16px;font-size:12.5px;line-height:1.6;}
+.narrative{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:5px;padding:14px 16px;margin-bottom:16px;}
 .narrative h3{margin:0 0 8px;font-size:11px;color:var(--green);text-transform:uppercase;}
 button{background:var(--panel2);color:var(--green);border:1px solid var(--line);border-radius:4px;padding:6px 9px;cursor:pointer;margin:2px 4px 8px 0;}
 
@@ -482,14 +476,12 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
 .tabbtn{background:var(--panel2);color:var(--gray);border:1px solid var(--line);border-radius:5px 5px 0 0;padding:8px 16px;cursor:pointer;text-transform:uppercase;}
 .tabbtn.active{color:var(--green);border-bottom:2px solid var(--bg);background:var(--panel);}
 .view{display:none;flex:1;min-height:0;} .view.active{display:block;}
-#viewFlow.active{display:flex;flex-direction:column;}
+#viewFlow.active, #viewPipeline.active{display:flex;flex-direction:column;}
 
 .crumbs{font-size:11px;color:var(--gray);margin-bottom:14px;padding:8px 10px;background:var(--panel);border:1px solid var(--line);border-radius:5px;}
-.flowcols{display:flex;gap:20px;align-items:flex-start;flex:1;min-height:0;}
+.flowcols{display:flex;gap:20px;align-items:flex-start;flex:1;min-height:0;height:100%;}
 .flowdiagram{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;}
-.canvas-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:11px;}
-.flow-canvas-wrap{position:relative;flex:1;border:1px solid var(--line);border-radius:6px;overflow:auto;background:var(--bg);cursor:grab;}
-.flow-canvas-wrap.dragging{cursor:grabbing;}
+.flow-canvas-wrap{position:relative;flex:1;border:1px solid var(--line);border-radius:6px;overflow-y:scroll;overflow-x:auto;background:var(--bg);cursor:grab;}
 .flow-canvas{position:absolute;top:0;left:0;transform-origin:0 0;}
 .connectors{position:absolute;top:0;left:0;pointer-events:none;overflow:visible;}
 .flowbox{position:absolute;border:1.5px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer;background:var(--panel2);display:flex;align-items:center;gap:8px;box-sizing:border-box;}
@@ -501,13 +493,21 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
 .flowbox.t-step{color:var(--text);}
 .flowbox.t-status-success{color:var(--green);border-color:rgba(77,255,136,.35);}
 .flowbox.t-error{color:var(--red);border-color:var(--red);box-shadow:0 0 10px rgba(255,92,92,.15);}
-.logpreview{width:380px;position:sticky;top:0;background:#050705;border:1px solid var(--line);border-radius:6px;padding:12px;font-size:11px;color:var(--green-dim);height:100%;overflow-y:auto;}
+.logpreview{width:380px;background:#050705;border:1px solid var(--line);border-radius:6px;padding:12px;font-size:11px;color:var(--green-dim);height:100%;overflow-y:auto;}
 .logpreview h4{margin:0 0 8px;color:var(--green);text-transform:uppercase;}
+
+/* Pipeline Specific Styling */
+.pipe-container { display:flex; flex-direction:column; gap:16px; padding:20px; background:var(--panel); border-radius:6px; height:100%; overflow-y:scroll; }
+.pipe-row { display:flex; align-items:center; gap:12px; padding:10px; background:var(--panel2); border-left:4px solid var(--cyan); border-radius:4px; }
+.pipe-row.p-error { border-left-color:var(--red); background:rgba(255,92,92,0.04); }
+.pipe-depth { font-size:10px; color:var(--gray); background:var(--bg); padding:2px 6px; border-radius:3px; }
+.pipe-label { font-weight:bold; color:var(--text); }
+.pipe-explain { font-size:11px; color:var(--green-dim); font-style:italic; }
 </style></head>
 <body>
 <div class="wrap">
   <div class="sidebar">
-    <div class="brand"><div class="t1">TRACEVIEW</div><div class="t2">FLOW REPORT</div></div>
+    <div class="brand"><div class="t2">TRACEVIEW REPORT</div></div>
     <div id="stats"></div>
     <div class="errbox" id="errbox"></div>
   </div>
@@ -517,13 +517,13 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
     <div class="tabs">
       <button class="tabbtn active" id="tabTreeBtn">Tree View</button>
       <button class="tabbtn" id="tabFlowBtn">Vertical Flow Diagram</button>
+      <button class="tabbtn" id="tabPipelineBtn">Code Pipeline View</button>
     </div>
 
     <div class="view active" id="viewTree">
       <div>
-        <button onclick="document.querySelectorAll('.module.collapsed,.loop.collapsed').forEach(n=>n.classList.remove('collapsed'))">Expand all</button>
-        <button onclick="document.querySelectorAll('.module,.loop').forEach(n=>n.classList.add('collapsed'))">Collapse all</button>
-        <button id="explainToggle">Hide explanations</button>
+        <button onclick="document.querySelectorAll('.module.collapsed').forEach(n=>n.classList.remove('collapsed'))">Expand all</button>
+        <button onclick="document.querySelectorAll('.module').forEach(n=>n.classList.add('collapsed'))">Collapse all</button>
       </div>
       <div class="flow" id="flow"></div>
     </div>
@@ -549,6 +549,10 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
           <div id="lp-body">Hover or select a timeline block to track execution line indices.</div>
         </div>
       </div>
+    </div>
+
+    <div class="view" id="viewPipeline">
+      <div class="pipe-container" id="pipelineContainer"></div>
     </div>
   </div>
 </div>
@@ -588,8 +592,6 @@ const OFF_X = 60, OFF_Y = 40;
 const nodeByKey = {};
 GRAPH.nodes.forEach(n => nodeByKey[n.key] = n);
 
-document.getElementById('crumbs').textContent = `${GRAPH.nodes.length} structural execution step nodes mapped.`;
-
 function labelFor(n){
   if(n.kind==='module') return 'CALL \u203a ' + n.label;
   return n.label;
@@ -613,6 +615,7 @@ function drawEdges(){
   
   const defs = document.createElementNS(NS,'defs');
   defs.innerHTML = `<marker id="arrow-NEXT" markerWidth="9" markerHeight="9" refX="5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#5b7a63"/></marker>` +
+                   `<marker id="arrow-CALL" markerWidth="9" markerHeight="9" refX="5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#6fd7e8"/></marker>` +
                    `<marker id="arrow-ERROR" markerWidth="9" markerHeight="9" refX="5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#ff5c5c"/></marker>`;
   svg.appendChild(defs);
 
@@ -620,11 +623,16 @@ function drawEdges(){
   GRAPH.edges.forEach(e=>{
     const a = nodeByKey[e.from], b = nodeByKey[e.to];
     if(!a || !b) return;
-    const color = e.kind==='ERROR' ? '#ff5c5c' : '#5b7a63';
+    
+    // Explicit line identification style
+    let color = '#5b7a63'; 
+    if(e.kind === 'ERROR') color = '#ff5c5c';
+    else if(e.kind === 'CALL') color = '#6fd7e8'; // Cyan line for Program-to-Program calls
+    
     const path = document.createElementNS(NS,'path');
     let d;
 
-    if(a.layer === b.layer){
+    if(a.layer === b.layer && e.kind !== 'CALL'){
       const x = a.x + OFF_X + bw/2;
       d = `M ${x} ${a.y+OFF_Y+bh} L ${x} ${b.y+OFF_Y}`;
     } else {
@@ -666,7 +674,18 @@ function renderFlowDiagram(){
     canvas.appendChild(box);
   });
   drawEdges();
-  resetView();
+}
+
+function renderPipelineView() {
+  const container = document.getElementById('pipelineContainer');
+  container.innerHTML = '';
+  GRAPH.nodes.forEach(n => {
+    const row = el('div', 'pipe-row' + (n.error ? ' p-error' : ''));
+    row.appendChild(el('span', 'pipe-depth', `Lvl ${n.depth}`));
+    row.appendChild(el('span', 'pipe-label', esc(labelFor(n))));
+    row.appendChild(el('span', 'pipe-explain', esc(n.explain || 'Step execution segment.')));
+    container.appendChild(row);
+  });
 }
 
 const view = {scale:1, x:20, y:20};
@@ -674,7 +693,6 @@ function applyView(){
   const canvas = document.getElementById('flowCanvas');
   canvas.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.scale})`;
 }
-// Removed window dimensions dependency so manual overflow scrolls take precedence 
 function resetView(){
   view.scale = 0.95; view.x = 30; view.y = 30; applyView();
 }
@@ -683,7 +701,6 @@ function clampScale(s){ return Math.min(3, Math.max(0.15, s)); }
 (function setupPanZoom(){
   const wrap = document.getElementById('flowWrap');
   wrap.addEventListener('wheel', (e)=>{
-    // Scroll working cleanly downwards if track boundaries are exceeded
     if(e.ctrlKey) {
       e.preventDefault();
       const rect = wrap.getBoundingClientRect();
@@ -696,16 +713,6 @@ function clampScale(s){ return Math.min(3, Math.max(0.15, s)); }
     }
   }, {passive:false});
 
-  let dragging = false, startX=0, startY=0, origX=0, origY=0;
-  wrap.addEventListener('mousedown', (e)=>{
-    if(e.target.closest('.flowbox') || wrap.scrollHeight > wrap.clientHeight) return;
-    dragging = true; startX = e.clientX; startY = e.clientY; origX = view.x; origY = view.y;
-  });
-  window.addEventListener('mousemove', (e)=>{
-    if(!dragging) return;
-    view.x = origX + (e.clientX - startX); view.y = origY + (e.clientY - startY); applyView();
-  });
-  window.addEventListener('mouseup', ()=>{ dragging=false; });
   document.getElementById('zoomInBtn').addEventListener('click', ()=>{ view.scale = clampScale(view.scale*1.1); applyView(); });
   document.getElementById('zoomOutBtn').addEventListener('click', ()=>{ view.scale = clampScale(view.scale*0.9); applyView(); });
   document.getElementById('zoomResetBtn').addEventListener('click', resetView);
@@ -714,12 +721,18 @@ function clampScale(s){ return Math.min(3, Math.max(0.15, s)); }
 function switchTab(which){
   document.getElementById('tabTreeBtn').classList.toggle('active', which==='tree');
   document.getElementById('tabFlowBtn').classList.toggle('active', which==='flow');
+  document.getElementById('tabPipelineBtn').classList.toggle('active', which==='pipeline');
+  
   document.getElementById('viewTree').classList.toggle('active', which==='tree');
   document.getElementById('viewFlow').classList.toggle('active', which==='flow');
+  document.getElementById('viewPipeline').classList.toggle('active', which==='pipeline');
+  
   if(which==='flow') renderFlowDiagram();
+  if(which==='pipeline') renderPipelineView();
 }
 document.getElementById('tabTreeBtn').addEventListener('click', ()=>switchTab('tree'));
 document.getElementById('tabFlowBtn').addEventListener('click', ()=>switchTab('flow'));
+document.getElementById('tabPipelineBtn').addEventListener('click', ()=>switchTab('pipeline'));
 
 const rc = DATA.header.rc;
 const rcBad = rc!==null && rc!==undefined && parseInt(rc,10)!==0;
