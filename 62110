@@ -1,0 +1,1010 @@
+hu Aug 13 12:43:06 IST 2026
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get DQP type (DQPTYPE):1: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+GETHOST CALLED
+C_SUPPORT - get host number (HOSTNO):1: (exists)
+C_SUPPORT - GETEVAR :FNS_SYSNUM:
+GETEVAR:data :3:, length- :1:
+C_SUPPORT - GETEVAR :BANCS_REP_TYPE:
+GETEVAR:data :CI:, length- :2:
+C_SUPPORT - GETEVAR :BANCS_REP_NO:
+GETEVAR:data :018:, length- :3:
+C_SUPPORT - GETEVAR :BANCS_OPER:
+GETEVAR:data :INIT    :, length- :8:
+C_SUPPORT - GETEVAR :BANCS_INP_Q1:
+GETEVAR:data :311CIFQ     :, length- :12:
+C_SUPPORT - GETEVAR :BANCS_INP_Q2:
+GETEVAR:data :            :, length- :12:
+C_SUPPORT - GETEVAR :BANCS_INP_Q3:
+GETEVAR:data :            :, length- :12:
+C_SUPPORT - GETEVAR :BANCS_QUE:
+GETEVAR:data :CIF:, length- :3:
+C_SUPPORT - GETEVAR :CTRL_SYSNUM:
+GETEVAR:data :0:, length- :1:
+C_SUPPORT - GETEVAR :DAY_SYSNUM:
+GETEVAR:data :1:, length- :1:
+C_SUPPORT - GETEVAR :NIGHT_SYSNUM:
+GETEVAR:data :2:, length- :1:
+C_SUPPORT - GETEVAR :NON24H_SYSNUM:
+GETEVAR:data :3:, length- :1:
+C_SUPPORT - GETEVAR :DEF_RMODE:
+GETEVAR:data :D:, length- :1:
+C_SUPPORT - GETEVAR :MASTER_DB_1:
+GETEVAR:data :iardev:, length- :6:
+C_SUPPORT - GETEVAR :MASTER_DB_2:
+GETEVAR:data :iardev:, length- :6:
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - GETEVAR :FNS_SYSNUM:
+GETEVAR:data :3:, length- :1:
+SHARE_MEM - function: 0
+SMCB - not existed
+SMCB - i did not create bc2d
+INSERT into SMCB array
+SMCB ARRAY
+smcb_addr[0].system_id = [3]
+smcb_addr[0].address = [2305843009045823488]
+smcb_addr[0].shm_name = [1572935]
+smcb_addr[0].sem_name = [98381]
+SMCB ARRAY
+smcb_addr[1].system_id = [ ]
+smcb_addr[1].address = [0]
+smcb_addr[1].shm_name = [0]
+smcb_addr[1].sem_name = [0]
+SMCB ARRAY
+smcb_addr[2].system_id = [ ]
+smcb_addr[2].address = [0]
+smcb_addr[2].shm_name = [0]
+smcb_addr[2].sem_name = [0]
+SHARE_MEM - function: 1
+SMCB - existed
+SMCB - version ok
+SHM_ACCESS : key = 0x733a1a32
+SHM_ACCESS : applnum = 1 
+SHM_ACCESS : areanum = 2 
+SHARE_MEM - function: 1
+SMCB - existed
+SMCB - version ok
+SHM_ACCESS : key = 0x733a1a33
+SHM_ACCESS : applnum = 1 
+SHM_ACCESS : areanum = 3 
+C_SUPPORT - getpid: :48173:
+C_SUPPORT - get DQP type (DQPTYPE):1: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+GETHOST CALLED
+C_SUPPORT - get host number (HOSTNO):1: (exists)
+C_SUPPORT - GETEVAR :FNS_SYSNUM:
+GETEVAR:data :3:, length- :1:
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.671852|              UT0008:(F000) PROCESS ID =048173                                                                                        
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.680244|              DBIO:(A000) INITIALIZING                                                                                                
+C_SUPPORT - GETEVAR :EXPIRYPASSWORD:
+GETEVAR:data :T{51=8$mvmMNaccQSTkihzgvuw07C|~:, length- :31:
+C_SUPPORT - GETEVAR :DOCUREF:
+GETEVAR:data :SBINDIAplk.:, length- :11:
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.682417|              DBIO:(A100) FILE-INDEX, FILE-NUM, NO-DATA-SETS: 0497 0496 0494                                                          
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.682483|              DBIO:(A100) FIRST ENTRY = AACH                                                                                          
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.682566|              DBIO:(A020) CALL-FUNCTION 96 ACCESS                                                                                     
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.685006|              DBIODIST:(A000) ENTRY - FUNCTION OPEN         FOR SQMISC REC-LEN 0001                                                   
+IOMISC:(A-10) ENTRY - FUNCTION OPEN        
+C_SUPPORT - GETEVAR :BANCSPROGRAMID:
+GETEVAR:data :CIF:, length- :3:
+C_SUPPORT - GETEVAR :BANCSORACLETRACEUSER:
+GETEVAR:data :fnsonld1:, length- :8:
+IOMISC:(Z300) FUNCTION OPEN         SQLCODE = +000000000
+IOMISC:(A-10) EXIT - FUNCTION OPEN         F1 SQLCODE = +000000000
+IOMISC:(A-10) EXIT - FUNCTION OPEN         F2 SQLCODE = +000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.829451|              DBIODIST:(A000) EXIT - FUNCTION OPEN         FOR SQMISC STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.829525|              DBIO:(A020) CALL-FUNCTION 96 ACCESS          STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.829593|              LINKIN:(A100) SUCCESSFUL DATABASE SIGN-ON                                                                               
+SFD FIRST TIME FLAG SYSSTART
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.839846|              Txn:990001 Branch:      Teller:        Batch_Tandem:  Journal:                                                          
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.842687|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.842805|              DBIODIST:(A000) ENTRY - FUNCTION READFIRST    FOR LNGM   REC-LEN 0008                                                   
+IOLNGM:(A000) ENTRY - FUNCTION READFIRST    KEY-NO 000 VALUE                                 ****                                                                
+IOLNGM:(A000) AFTER - FUNCTION READFIRST    KEY-NO 000 VALUE                                 ****                                                                
+IOLNGM:(A000) AFTER - FUNCTION READFIRST    F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOLNGM:(A000) AFTER - FUNCTION READFIRST    F2 FUNCTION = READFIRST    F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.847379|              DBIODIST:(A000) EXIT - FUNCTION READFIRST    FOR LNGM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.847445|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.847528|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.847612|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR LNGM   REC-LEN 0008                                                   
+IOLNGM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 00301001                        ****    00301001                                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 00301001                        ****    00301001                                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.848127|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR LNGM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.848188|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.848268|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.848351|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR LNGM   REC-LEN 0008                                                   
+IOLNGM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 00302902                        ****    00302902                                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 00302902                        ****    00302902                                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.848759|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR LNGM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.848820|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.848900|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.848983|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR LNGM   REC-LEN 0008                                                   
+IOLNGM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 00303903                        ****    00303903                                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 00303903                        ****    00303903                                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.849369|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR LNGM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.849429|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.849510|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.849602|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR LNGM   REC-LEN 0008                                                   
+IOLNGM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 00319901                        ****    00319901                                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 00319901                        ****    00319901                                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.849986|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR LNGM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.850048|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.850128|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.850211|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR LNGM   REC-LEN 0008                                                   
+IOLNGM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 00320901                        ****    00320901                                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 00320901                        ****    00320901                                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000001403
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.850781|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR LNGM   STATUS ED                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.850842|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.881403|              ED0000(LOAD-GLIF-FIX): ERROR OPENING FILE GLIF_ISSUE_LIVE_FLAG.card35                                                   
+SFD FIRST TIME FLAG UT0250
+C_SUPPORT - GETEVAR :BANCS_CPM_TRACE:
+GETEVAR: BANCS_CPM_TRACE not found
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.890571|              UT0005(A000):BANCS_CPM_TRACE =N                                                                                         
+C_SUPPORT - GETEVAR :FNS_SYSNUM:
+GETEVAR:data :3:, length- :1:
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.890694|              UT0005(A000): SYSTEM NO=3                                                                                               
+SHARE_MEM - function: 1
+SMCB - existed
+SMCB - version ok
+SHM_ACCESS : key = 0x733a312a
+SHM_ACCESS : applnum = 2 
+SHM_ACCESS : areanum = 4 
+SHARE_MEM - function: 1
+SMCB - existed
+SMCB - version ok
+SHM_ACCESS : key = 0x733a312b
+SHM_ACCESS : applnum = 2 
+SHM_ACCESS : areanum = 5 
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.892398|              UT0005:(I100) ATTACHED TO EXISTING NOPG TABLE 002                                                                       
+SHARE_MEM - function: 1
+SMCB - existed
+SMCB - version ok
+SHM_ACCESS : key = 0x733a312c
+SHM_ACCESS : applnum = 2 
+SHM_ACCESS : areanum = 6 
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.892649|              UT0005:(I100) ATTACHED TO EXISTING PAGE TABLE 003                                                                       
+SFD FIRST FLAG ED0000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.905055|              UTBUFR(A000) ENTRY - FUNCTION 0 VALUE                                                                                   
+ FT0000-INPUT-ERR-MSG-NO1 : 0000
+ FT0000-INPUT-ERR-MSG-NO2 : 0000
+ FT0000-INPUT-ERR-MSG-NO3 : 0000
+ FT0000-INPUT-ERR-MSG-NO4 : 0000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.921595|              UT0220:(C000) INSTITUTION RECORDS LOADED = 0002                                                                         
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.923230|              UT0260:(H100) INVALID ERROR MESSAGE NO ===> 0001                                                                        
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:06.964120|              FT0000:(A000) REFRESH SWITCHED ON                                                                                       
+C_SUPPORT - GETEVAR :ENQMOD:
+GETEVAR:data :N:, length- :1:
+SFD FIRST TIME FLAG ED0010
+C_SUPPORT - GETEVAR :SY_AUDT_PARAM:
+GETEVAR: SY_AUDT_PARAM not found
+SY70SEND(A000):THIS TXN BEFORE990001
+SY70SEND(A000):THIS TXN AFTER 990001
+AUDT_PARAM = 260512 IR YASH
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+GETHOST CALLED
+C_SUPPORT - get host number (HOSTNO):1: (exists)
+C_SUPPORT - get DQP type (DQPTYPE):1: (exists)
+THIS MSG SHOULD NOT GO FOR CONSOLE DISPLAY
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.002618|              SY0070:(A070) READ ERROR ON FILE PSAUDT01 (AT 'INIT') WITH RRN-        1, WHICH SHOULD BE THERE (SEEN)                  
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get DQP type (DQPTYPE):1: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+GETHOST CALLED
+C_SUPPORT - get host number (HOSTNO):1: (exists)
+C_SUPPORT - GETEVAR :FNS_SYSNUM:
+GETEVAR:data :3:, length- :1:
+SHARE_MEM - function: 0
+SMCB - existed
+SMCB - version ok
+SHARE_MEM - function: 1
+SMCB - existed
+SMCB - version ok
+SHM_ACCESS : key = 0x733a02b3
+SHM_ACCESS : applnum = 0 
+SHM_ACCESS : areanum = 0 
+SHARE_MEM - function: 1
+SMCB - existed
+SMCB - version ok
+SHM_ACCESS : key = 0x733a02b4
+SHM_ACCESS : applnum = 0 
+SHM_ACCESS : areanum = 1 
+SHARE_MEM - function: 4
+SMCB - existed
+SMCB - version ok
+SHARE_MEM - function: 6
+SMCB - existed
+SMCB - version ok
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get DQP type (DQPTYPE):1: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+GETHOST CALLED
+C_SUPPORT - get host number (HOSTNO):1: (exists)
+C_SUPPORT - GETEVAR :FNS_SYSNUM:
+GETEVAR:data :3:, length- :1:
+ED0000:(Z300) STRT AREA TRANSACTION NUMBER =990001
+W900-INVALID-FLAG : 0000
+INVM-CURR-BAL-30 : 02314885530818453536
+INVM-KEY-30       :                    
+W900-INVALID-FLAG  : 0000
+IN0000(P111): ERROR OPENING FILE FCRA_STOP_BRANCH.card FILE STATUS: 35
+SFD FIRST TIME FLAG IN0000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.151272|              IN0000(LOAD-BYPASS):ERROR OPENING FILE$card/GEM_TRAN_CODE.card FILE STATUS:35                                           
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.155552|              UTSUVM:(MAIN):UTSUVM-LINK-AREA IS00003                                    0000000000000000000000000000000000000000000 00
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.157176|              UTSUVM:(A123) GROUP LIMIT CARD OPEN ERRORWA-STATUS-SUBGROUP : 35          0000000000000000000000000000000000000000000 00
+WA-PROGRAM-ID = UTSLAB 
+DBIOSLAB:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE                                                                                                                                                       
+DBIOSLAB:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE                                                                                                                                                       
+DBIOSLAB:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+DBIOSLAB:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+DBIOSLAB:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 00301                                                                                                                                                 
+DBIOSLAB:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 00301                                                                                                                                                 
+DBIOSLAB:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+DBIOSLAB:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000001403
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.168035|              UTSLAB:(B000) RECORDS LOADING FOR SLAB COMPLETE , TOTAL NUMBER RECORDS LOADED :0001                                     
+IN0000(LOAD): ERROR OPENING FILE CASH-DEP-TXNS.card FILE STATUS:35
+IN0000(LOAD): ERROR OPENING FILE CASH_DEP_WDL_LIMIT.card FILE STATUS: 35
+IN0000(LOAD): ERROR OPENING FILE 20LAC_BYPASS.card FILE STATUS: 35
+IN0000(V222): ERROR OPENING SRCTZN_ALLOWPROD.card FILE STATUS: 35
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.181004|              IN0000(DESC-LOAD-PROD) ERROR OPENING FILE DIGIHOLD_PROD_TYPE.card FILE STATUS: 35                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.181837|              IN0000(EXCL-LOAD-PROD) ERROR OPENING FILE DIGIHOLD_EXCLUSION.card FILE STATUS: 35                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.182517|              IN0000(CUST-LOAD-PROD) ERROR OPENING FILE DIGIHOLD_CUST_TYPE.card FILE STATUS: 35                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.183264|              IN0000 (W745-LOAD-MATLIMIT-ARRAY) : ERROR IN MATLIMIT.card OPENING                                                      
+FDBRCH INIT: 01111
+FD VAL IN IN0000 INIT: 01111
+DBIOIBTP:(A000) ENTRY - FUNCTION READ         KEY-NO 000 VALUE 003                                                                                                                                                   
+DBIOIBTP:(A000) AFTER - FUNCTION READ         KEY-NO 000 VALUE 003                                                                                                                                                   
+DBIOIBTP:(A000) AFTER - FUNCTION READ         F1 FUNCTION =              F1 SQLCODE  = 0000000000
+DBIOIBTP:(A000) AFTER - FUNCTION READ         F2 FUNCTION = READ         F2 SQLCODE  = 0000001403
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.194458|              DBIO:(A020) CALL-FUNCTION    ACCESS                                                                                     
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.194571|              DBIO:(A020) CALL-FUNCTION    ACCESS          STATUS XCAL                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.194653|              DBIO:(A020) CALL-FUNCTION 96 ACCESS                                                                                     
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.194750|              DBIODIST:(A000) ENTRY - FUNCTION OPEN         FOR SQMISC REC-LEN 0001                                                   
+IOMISC:(A-10) ENTRY - FUNCTION OPEN        
+IOMISC:(Z300) FUNCTION OPEN         SQLCODE = +000000000
+IOMISC:(A-10) EXIT - FUNCTION OPEN         F1 SQLCODE = +000000000
+IOMISC:(A-10) EXIT - FUNCTION OPEN         F2 SQLCODE = +000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.194952|              DBIODIST:(A000) EXIT - FUNCTION OPEN         FOR SQMISC STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.195023|              DBIO:(A020) CALL-FUNCTION 96 ACCESS          STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.195095|              IN0000:(A000) SUCCESSFUL DATABASE SIGN-ON                                                                               
+ FT0000-INPUT-ERR-MSG-NO1 : 0000
+ FT0000-INPUT-ERR-MSG-NO2 : 0000
+ FT0000-INPUT-ERR-MSG-NO3 : 0000
+ FT0000-INPUT-ERR-MSG-NO4 : 0000
+C_SUPPORT - GETEVAR :BANCS_ATM_INTERFACE_TYPE:
+GETEVAR:data :T:, length- :1:
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.195401|              IN0000:(A100) LOADING FILES                                                                                             
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.360645|              IN0001(VS156-OPEN-CARD-FILE):  ERROR OPENING PMVS_CARD.card STATUS:35                                                   
+IN0001(V291): ERROR OPENING FILE ALLOW_PROD_TO_BSBD.card FILE STATUS: 35
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.365515|              IN0001(N111-BAT): ERROR OPENING CARDFILE , FILE STATUS 35                                                               
+IN0001(LOAD): ERROR OPENING FILE KYC_BYPASS_PROD.card FILE STATUS:35
+IN0001(V221): ERROR OPENING FILE TINYPRODCOMBINATION.card FILE STATUS: 35
+IN0001(V261): ERROR OPENING FILE TOALLOWPROD.card FILE STATUS: 35
+IN0001(V241): ERROR OPENING FILE DBT_NOTALLW_PCHANGE.card FILE STATUS: 35
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.369987|              IN0001(A542) : ERROR OPENING BGL_CGL_AGRI_SUB.cardSTATUS:35                                                             
+IN0001(V333): ERROR OPENING SRCTZN_ALLOWPROD.card FILE STATUS: 35
+IN0001(HGL-MAT-VAL) : ERROR OPEN IN FILE  HGLMATVALUE.card FILE STATUS : 35
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.379138|              IN0001 (W745-LOAD-MATLIMIT-ARRAY) : ERROR IN MATLIMIT.card OPENING                                                      
+NROLIVE-DT = 02052025 
+IN0002(P111): ERROR OPENING FILE FCRA_STOP_BRANCH.card FILE STATUS: 35
+IN0002(S001): ERROR OPENING FILE ESTRICT_NON_HOME_HOLD.card FILE STATUS: 35
+IN0002(P001): ERROR OPENING FILE ESTRICT_NON_HOME_STOP.card FILE STATUS: 35
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.398108|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.398231|              DBIODIST:(A000) ENTRY - FUNCTION READFIRST    FOR LNGM   REC-LEN 0008                                                   
+IOLNGM:(A000) ENTRY - FUNCTION READFIRST    KEY-NO 000 VALUE                                 ****                                                                
+IOLNGM:(A000) AFTER - FUNCTION READFIRST    KEY-NO 000 VALUE                                 ****                                                                
+IOLNGM:(A000) AFTER - FUNCTION READFIRST    F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOLNGM:(A000) AFTER - FUNCTION READFIRST    F2 FUNCTION = READFIRST    F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.399375|              DBIODIST:(A000) EXIT - FUNCTION READFIRST    FOR LNGM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.399440|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.399526|              DBIO:(A020) CALL-FUNCTION 78 ACCESS TXTM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.399612|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR TXTM   REC-LEN 0238                                                   
+IOTXTM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 003IN00020100000000000000010000 ****    00320901                                                    
+IOTXTM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 003IN00020100000000000000010000 ****    00320901                                                    
+IOTXTM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOTXTM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.403036|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR TXTM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.403103|              DBIO:(A020) CALL-FUNCTION 78 ACCESS TXTM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.403211|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.403298|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR LNGM   REC-LEN 0008                                                   
+IOLNGM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 00301001                        ****                                                                
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 00301001                        ****                                                                
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.403735|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR LNGM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.403801|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.403888|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.403977|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR LNGM   REC-LEN 0008                                                   
+IOLNGM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 00302902T0100000000000098320001 ****                                                                
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 00302902T0100000000000098320001 ****                                                                
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.404378|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR LNGM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.404442|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.404526|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.404612|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR LNGM   REC-LEN 0008                                                   
+IOLNGM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 00303903T0100000000000098320001 ****                                                                
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 00303903T0100000000000098320001 ****                                                                
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.405008|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR LNGM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.405071|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.405156|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.405255|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR LNGM   REC-LEN 0008                                                   
+IOLNGM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 00319901T0100000000000098320001 ****                                                                
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 00319901T0100000000000098320001 ****                                                                
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.405647|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR LNGM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.405710|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.405793|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.405881|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR LNGM   REC-LEN 0008                                                   
+IOLNGM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 00320901T0100000000000098320001 ****                                                                
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 00320901T0100000000000098320001 ****                                                                
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000001403
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.406465|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR LNGM   STATUS ED                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.406529|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+UT0014(P210): ERROR OPENING FILE RESTRICT_NON_HOME_SI.card FILE STATUS: 35
+SW0210:A410 WA-MIDS-MGEN = MGEN
+DBIOCCYM:(A000) ENTRY - FUNCTION READ         KEY-NO 000 VALUE 003NZD                                                                                                                                                
+DBIOCCYM:(A000) AFTER - FUNCTION READ         KEY-NO 000 VALUE 003NZD                                                                                                                                                
+DBIOCCYM:(A000) AFTER - FUNCTION READ         F1 FUNCTION =              F1 SQLCODE  = 0000000000
+DBIOCCYM:(A000) AFTER - FUNCTION READ         F2 FUNCTION = READ         F2 SQLCODE  = 0000000000
+DBIOCTYM:(A000) ENTRY - FUNCTION READ         KEY-NO 000 VALUE 003NZ                                                                                                                                                 
+DBIOCTYM:(A000) AFTER - FUNCTION READ         KEY-NO 000 VALUE 003NZ                                                                                                                                                 
+DBIOCTYM:(A000) AFTER - FUNCTION READ         F1 FUNCTION =              F1 SQLCODE  = 0000000000
+DBIOCTYM:(A000) AFTER - FUNCTION READ         F2 FUNCTION = READ         F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.569366|              UT0800: (A650-LOAD-REPOST-HOLD-STOP-CARD): ERROR IN REPOST_STOP_HOLD.card opening                                       
+LOAD-REP-COUNT:ERROR OPENING IN REPOST_REP_CNT.card
+NROLIVE-DT = 02052025 
+IN0023(A100):ERROR OPENING TRAN_CODE_POST.card
+WA-BT-TXN-CARD-STATUS35
+UT8500 (A000) INVALID CALL CODE   - DEFAULT TO NORMAL DISPLAY
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.620944|              IN0023:(LOAD-PLIVE) ERROR LOADING GOVT_CORRCT.card STATUS - 35                                                          
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.622470|              IN0023(N101):ERROR OPENINGMINISTRYCODE.card FILE. FILE STATUS = 35                                                      
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.624528|              IN0024(LOAD-AGNBRCH):ERROR OPENING FILEGRT_SUP_BYPASS.card FILE STATUS:35                                               
+IN0023(LOAD): ERROR OPENING FILE CASH-DEP-TXNS.card FILE STATUS:35
+IN0023(LOAD): ERROR OPENING FILE CASH_DEP_WDL_LIMIT.card FILE STATUS: 35
+PETDS2(LOAD): ERROR OPENING FILE 20LAC_BYPASS.card FILE STATUS: 35
+C_SUPPORT - GETEVAR :BANCS_ATM_INTERFACE_TYPE:
+GETEVAR:data :T:, length- :1:
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.678914|              IN0024: (A650-LOAD-REPOST-HOLD-STOP-CARD): ERROR IN REPOST_STOP_HOLD.card opening                                       
+IN0024(A100):ERROR OPENING TRAN_CODE_POST.card
+WA-BT-TXN-CARD-STATUS35
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.684447|              IN0024(R004-BSBD-PRODUCTS-LOAD):ERROR OPENING FI_BSBD_PRODUCTS.card                                                     
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.685451|              IN0024 (LOAD) : ERROR OPENING FILE  CPCLINK FILE STATUS : 35                                                            
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.686546|              IN0024(LOAD-AGNBRCH):ERROR OPENING FILEGRT_SUP_BYPASS.card FILE STATUS:35                                               
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.691042|              IN0024(SG02):ERROR OPENING FILECOOP BRANCH FILE STATUS:35                                                               
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.692174|              IN0024:Z000:NO OF ACCOUNTS LOADED IN ARRAY IS : 008                                                                     
+NROLIVE-DT = 02052025 
+C_SUPPORT - GETEVAR :BANCS_ATM_INTERFACE_TYPE:
+GETEVAR:data :T:, length- :1:
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.747223|              IN0025(P100-CASH): ERROR OPENING CARDFILE CASH-DEP-TXNS.card FILE STATUS:35                                             
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.747723|              IN0025(L100-DEP): ERROR OPENING CARDFILE CASH_DEP_WDL_LIMIT.card FILE STATUS: 35                                        
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.748169|              IN0025(J100-TIER): ERROR OPENING CARDFILE 20LAC_BYPASS.card FILE STATUS: 35                                             
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.749019|              IN0025(A542) : ERROR OPENING BGL_CGL_AGRI_SUB.cardSTATUS:35 FILE STATUS: 35                                             
+NROLIVE-DT = 02052025 
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+GETHOST CALLED
+C_SUPPORT - get host number (HOSTNO):1: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.769325|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.769441|              DBIODIST:(A000) ENTRY - FUNCTION READFIRST    FOR LNGM   REC-LEN 0008                                                   
+IOLNGM:(A000) ENTRY - FUNCTION READFIRST    KEY-NO 000 VALUE                                 ****                                                                
+IOLNGM:(A000) AFTER - FUNCTION READFIRST    KEY-NO 000 VALUE                                 ****                                                                
+IOLNGM:(A000) AFTER - FUNCTION READFIRST    F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOLNGM:(A000) AFTER - FUNCTION READFIRST    F2 FUNCTION = READFIRST    F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.770415|              DBIODIST:(A000) EXIT - FUNCTION READFIRST    FOR LNGM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.770482|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.770568|              DBIO:(A020) CALL-FUNCTION 78 ACCESS TXTM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.770657|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR TXTM   REC-LEN 0238                                                   
+IOTXTM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 003IN00290100000000000000010000 ****    00320901                003TCSHRT01000000000000983200010    
+IOTXTM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 003IN00290100000000000000010000 ****    00320901                003TCSHRT01000000000000983200010    
+IOTXTM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOTXTM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.771168|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR TXTM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.771230|              DBIO:(A020) CALL-FUNCTION 78 ACCESS TXTM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.771313|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.771412|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR LNGM   REC-LEN 0008                                                   
+IOLNGM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 00301001T0100000000000098320001 ****                    00301001                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 00301001T0100000000000098320001 ****                    00301001                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.771809|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR LNGM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.771871|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.771951|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.772034|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR LNGM   REC-LEN 0008                                                   
+IOLNGM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 00302902T0100000000000098320001 ****                    00302902                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 00302902T0100000000000098320001 ****                    00302902                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.772431|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR LNGM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.772493|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.772573|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.772656|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR LNGM   REC-LEN 0008                                                   
+IOLNGM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 00303903T0100000000000098320001 ****                    00303903                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 00303903T0100000000000098320001 ****                    00303903                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.773055|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR LNGM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.773126|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.773207|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.773289|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR LNGM   REC-LEN 0008                                                   
+IOLNGM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 00319901T0100000000000098320001 ****                    00319901                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 00319901T0100000000000098320001 ****                    00319901                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.773671|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR LNGM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.773733|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.773814|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.773896|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR LNGM   REC-LEN 0008                                                   
+IOLNGM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 00320901T0100000000000098320001 ****                    00320901                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 00320901T0100000000000098320001 ****                    00320901                                    
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOLNGM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000001403
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.774460|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR LNGM   STATUS ED                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.774522|              DBIO:(A020) CALL-FUNCTION 75 ACCESS LNGM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.877994|              UT0810:(A100) LOADING FILES                                                                                             
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.886259|              UT0810:(A300) DATE FILE LOADED                                                                                          
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.897085|              UT0069(A542): ERROR OPENING PMVS_CARD.cardSTATUS:35                                                                     
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.929250|              BR0025(P100-CASH): ERROR OPENING CARDFILE CASH-DEP-TXNS.card FILE STATUS:35                                             
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.929726|              BR0025(L100-DEP): ERROR OPENING CARDFILE CASH_DEP_WDL_LIMIT.card FILE STATUS: 35                                        
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.930182|              BR0025(J100-TIER): ERROR OPENING CARDFILE 20LAC_BYPASS.card FILE STATUS: 35                                             
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.930632|              BR0025(A542) : ERROR OPENING BGL_CGL_AGRI_SUB.cardSTATUS:35 FILE STATUS: 35                                             
+DBIOPRLM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 031PBR6999                                                                                                                                            
+DBIOPRLM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 031PBR6999                                                                                                                                            
+DBIOPRLM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+DBIOPRLM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+DBIOPRLM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 077PBR6999                                                                                                                                            
+DBIOPRLM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 077PBR6999                                                                                                                                            
+DBIOPRLM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+DBIOPRLM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+DBIOPRLM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 137PBR6999                                                                                                                                            
+DBIOPRLM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 137PBR6999                                                                                                                                            
+DBIOPRLM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+DBIOPRLM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+DBIOPRLM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 078PBR6999                                                                                                                                            
+DBIOPRLM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 078PBR6999                                                                                                                                            
+DBIOPRLM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+DBIOPRLM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.944063|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.944199|              DBIODIST:(A000) ENTRY - FUNCTION READFIRST    FOR MSPM   REC-LEN 0111                                                   
+IOMSPM:(A000) ENTRY - FUNCTION READFIRST    KEY-NO 000 VALUE                                 ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READFIRST    KEY-NO 000 VALUE                                 ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READFIRST    F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOMSPM:(A000) AFTER - FUNCTION READFIRST    F2 FUNCTION = READFIRST    F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.948901|              DBIODIST:(A000) EXIT - FUNCTION READFIRST    FOR MSPM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.948969|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.949050|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.949134|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR MSPM   REC-LEN 0111                                                   
+IOMSPM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 0030000000000000001DEP  ó  [  ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 0030000000000000001DEP  ó  [  ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.949556|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR MSPM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.949617|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.949697|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.949780|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR MSPM   REC-LEN 0111                                                   
+IOMSPM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 0030000000000000002DEP  ó  [  ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 0030000000000000002DEP  ó  [  ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.950185|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR MSPM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.950269|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.950354|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.950440|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR MSPM   REC-LEN 0111                                                   
+IOMSPM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 0030000000000000003DEP  ó  [  ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 0030000000000000003DEP  ó  [  ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.950859|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR MSPM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.950923|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.951008|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.951094|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR MSPM   REC-LEN 0111                                                   
+IOMSPM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 0030000000000000004DEP  ó  [  ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 0030000000000000004DEP  ó  [  ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.951506|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR MSPM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.951570|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.951654|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.951741|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR MSPM   REC-LEN 0111                                                   
+IOMSPM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 0030000000000000005LON       ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 0030000000000000005LON       ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.952167|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR MSPM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.952230|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.952314|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.952404|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR MSPM   REC-LEN 0111                                                   
+IOMSPM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 0030000000000000010DEP   d     ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 0030000000000000010DEP   d     ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.952818|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR MSPM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.952881|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.952966|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.953052|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR MSPM   REC-LEN 0111                                                   
+IOMSPM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 0030000000000000011LON   d     ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 0030000000000000011LON   d     ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.953467|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR MSPM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.953531|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.953628|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.953714|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR MSPM   REC-LEN 0111                                                   
+IOMSPM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 0030000000000000101DEP        ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 0030000000000000101DEP        ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.954129|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR MSPM   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.954193|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.954277|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.954363|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR MSPM   REC-LEN 0111                                                   
+IOMSPM:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 0030000000000000102DEP        ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 0030000000000000102DEP        ****                    0       00000999               000          
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOMSPM:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000001403
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.954960|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR MSPM   STATUS ED                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.955025|              DBIO:(A020) CALL-FUNCTION 75 ACCESS MSPM     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.956213|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.956303|              DBIODIST:(A000) ENTRY - FUNCTION READFIRST    FOR BACT   REC-LEN 0176                                                   
+IOBACT:(A000) ENTRY - FUNCTION READFIRST    KEY-NO 000 VALUE                                 ****    000000000               0                                   
+IOBACT:(A000) AFTER - FUNCTION READFIRST    KEY-NO 000 VALUE                                 ****    000000000               0                                   
+IOBACT:(A000) AFTER - FUNCTION READFIRST    F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOBACT:(A000) AFTER - FUNCTION READFIRST    F2 FUNCTION = READFIRST    F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.962459|              DBIODIST:(A000) EXIT - FUNCTION READFIRST    FOR BACT   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.962524|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.962610|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.962702|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR BACT   REC-LEN 0176                                                   
+IOBACT:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 003001ACCOUNT CREATION          ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 003001ACCOUNT CREATION          ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.963225|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR BACT   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.963305|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.963389|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.963476|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR BACT   REC-LEN 0176                                                   
+IOBACT:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 003002EXISTING ACCOUNT          ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 003002EXISTING ACCOUNT          ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.963958|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR BACT   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.964021|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.964115|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.964201|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR BACT   REC-LEN 0176                                                   
+IOBACT:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 003003LOAN ASSESSMENT           ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 003003LOAN ASSESSMENT           ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.964677|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR BACT   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.964741|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.964825|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.964912|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR BACT   REC-LEN 0176                                                   
+IOBACT:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 003004SYSTEM MAINTENANCE        ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 003004SYSTEM MAINTENANCE        ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.965381|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR BACT   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.965445|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.965529|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.965615|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR BACT   REC-LEN 0176                                                   
+IOBACT:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 003005NOT IN USE                ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 003005NOT IN USE                ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.966104|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR BACT   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.966169|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.966253|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.966340|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR BACT   REC-LEN 0176                                                   
+IOBACT:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 003006NOT IN USE                ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 003006NOT IN USE                ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.966819|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR BACT   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.966883|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.966967|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.967054|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR BACT   REC-LEN 0176                                                   
+IOBACT:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 003007NOT IN USE                ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 003007NOT IN USE                ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.967538|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR BACT   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.967603|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.967695|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.967801|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR BACT   REC-LEN 0176                                                   
+IOBACT:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 003008NOT IN USE                ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 003008NOT IN USE                ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.968283|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR BACT   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.968351|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.968440|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.968535|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR BACT   REC-LEN 0176                                                   
+IOBACT:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 003009NOT IN USE                ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 003009NOT IN USE                ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.969012|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR BACT   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.969076|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.969160|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.969246|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR BACT   REC-LEN 0176                                                   
+IOBACT:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 003010NOT IN USE                ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 003010NOT IN USE                ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.969731|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR BACT   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.969795|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.969879|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.969966|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR BACT   REC-LEN 0176                                                   
+IOBACT:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 003011NOT IN USE                ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 003011NOT IN USE                ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.970442|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR BACT   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.970506|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.970591|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.970677|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR BACT   REC-LEN 0176                                                   
+IOBACT:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 003012NOT IN USE                ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 003012NOT IN USE                ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.971147|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR BACT   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.971211|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.971297|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.971395|              DBIODIST:(A000) ENTRY - FUNCTION READNEXT     FOR BACT   REC-LEN 0176                                                   
+IOBACT:(A000) ENTRY - FUNCTION READNEXT     KEY-NO 000 VALUE 003013NOT IN USE                ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     KEY-NO 000 VALUE 003013NOT IN USE                ****    000000000               1ACCOUNT CREATION         0101000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F1 FUNCTION = FETCH        F1 SQLCODE  = 0000000000
+IOBACT:(A000) AFTER - FUNCTION READNEXT     F2 FUNCTION = READNEXT     F2 SQLCODE  = 0000000000
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.971870|              DBIODIST:(A000) EXIT - FUNCTION READNEXT     FOR BACT   STATUS OK                                                       
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.971934|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT     STATUS ****                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - BINTIME - timestamp routineCIF-018|12:43:07.972018|              DBIO:(A020) CALL-FUNCTION 75 ACCESS BACT                                                                                
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
+C_SUPPORT - get trace state (GETTRS):Y: (exists)
