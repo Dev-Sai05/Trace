@@ -41,6 +41,9 @@ TEXT = '#d2f0da'
 MONO = ('Consolas', 10) if sys.platform.startswith('win') else ('Menlo', 10) if sys.platform == 'darwin' else ('DejaVu Sans Mono', 9)
 SANS = ('Segoe UI', 9) if sys.platform.startswith('win') else ('SF Pro Display', 9) if sys.platform == 'darwin' else ('DejaVu Sans', 9)
 
+# Minimum visual showcase duration (seconds) so quick parses are still watchable
+MIN_VISUAL_TIME = 2.8
+
 
 class TraceVizApp:
     def __init__(self, root):
@@ -64,7 +67,7 @@ class TraceVizApp:
             'RECURSION_GUARD', 'REG_STORE R1', 'SCAN_TOKEN', 'UNWIND_FRAME'
         ]
         
-        # Pre-seed branch tree nodes for the visualizer
+        # Branch tree nodes for the visualizer
         self.tree_nodes = [
             {'x': 0.15, 'y': 0.50, 'label': 'ROOT'},
             {'x': 0.32, 'y': 0.28, 'label': 'EXEC'},
@@ -222,12 +225,12 @@ class TraceVizApp:
 
         if w > 10:
             if self.is_running:
-                # 1. Left side: Real-time scrolling machine code & assembly disassembler
-                split_x = int(w * 0.72)
+                # 1. Left side: Paced scrolling machine code & assembly disassembler
+                split_x = int(w * 0.70)
                 self.canvas.create_line(split_x, 6, split_x, h - 6, fill=LINE_BRIGHT, width=1)
 
-                # Push simulated instruction stream tokens
-                if self.anim_tick % 2 == 0:
+                # Push instruction stream tokens every 6 ticks (slower and readable)
+                if self.anim_tick % 6 == 0:
                     hex_addr = f'0x{random.randint(0x1000, 0xFFFF):04X}'
                     tok = random.choice(self.code_tokens)
                     op_hex = f'{random.randint(0,255):02X} {random.randint(0,255):02X}'
@@ -235,15 +238,15 @@ class TraceVizApp:
                     if len(self.stream_lines) > 5:
                         self.stream_lines.pop(0)
 
-                # Render stream lines with fading intensity
+                # Render stream lines with smooth stepped brightness
                 for idx, line_text in enumerate(self.stream_lines):
                     y = 16 + (idx * 16)
-                    intensity = int(80 + (idx / max(len(self.stream_lines), 1)) * 175)
+                    intensity = int(70 + (idx / max(len(self.stream_lines), 1)) * 185)
                     color = f'#00{intensity:02x}44' if idx < len(self.stream_lines)-1 else GREEN
-                    self.canvas.create_text(12, y, anchor='w', text=line_text,
+                    self.canvas.create_text(14, y, anchor='w', text=line_text,
                                             fill=color, font=(MONO[0], 8))
 
-                # 2. Right side: Live AST Execution Tree & Flow Pulses
+                # 2. Right side: AST Execution Tree & Flow Pulses
                 tree_w = w - split_x
                 t_base_x = split_x
 
@@ -255,27 +258,27 @@ class TraceVizApp:
                     y2 = int(self.tree_nodes[v]['y'] * h)
                     self.canvas.create_line(x1, y1, x2, y2, fill=GREEN_MUTED, width=1)
 
-                    # Dynamic data packets traveling across branches
-                    pkt_progress = (self.anim_tick * 0.05 + (u + v) * 0.2) % 1.0
+                    # Smooth, slower packet traveling across branches
+                    pkt_progress = (self.anim_tick * 0.025 + (u + v) * 0.25) % 1.0
                     px = x1 + (x2 - x1) * pkt_progress
                     py = y1 + (y2 - y1) * pkt_progress
-                    self.canvas.create_oval(px - 2, py - 2, px + 2, py + 2, fill=GREEN, outline='')
+                    self.canvas.create_oval(px - 2.5, py - 2.5, px + 2.5, py + 2.5, fill=GREEN, outline='')
 
-                # Render active AST execution nodes
+                # Render AST execution nodes
                 for i, node in enumerate(self.tree_nodes):
                     nx = t_base_x + int(node['x'] * tree_w)
                     ny = int(node['y'] * h)
-                    pulse = math.sin(self.anim_tick * 0.2 + i)
+                    pulse = math.sin(self.anim_tick * 0.10 + i)
                     rad = 3 + int(pulse * 1.5)
                     
                     self.canvas.create_oval(nx - rad, ny - rad, nx + rad, ny + rad,
-                                            fill=GREEN if pulse > 0.2 else GREEN_MUTED, outline='')
+                                            fill=GREEN if pulse > 0.3 else GREEN_MUTED, outline='')
                     self.canvas.create_text(nx, ny - 8, text=node['label'],
-                                            fill=GREEN_DIM if pulse > 0.2 else GRAY,
+                                            fill=GREEN_DIM if pulse > 0.3 else GRAY,
                                             font=(MONO[0], 7))
 
-                # 3. Sweeping analysis radar beam
-                sweep_x = (self.anim_tick * 7) % w
+                # 3. Controlled speed radar beam sweep
+                sweep_x = (self.anim_tick * 3) % w
                 self.canvas.create_line(sweep_x, 0, sweep_x, h, fill=LINE_BRIGHT, width=1)
 
                 self.anim_tick += 1
@@ -285,7 +288,8 @@ class TraceVizApp:
                 self.canvas.create_text(w / 2, h / 2, text='[ CODE AUTOMATION PIPELINE READY ]',
                                         fill=GREEN_MUTED, font=(MONO[0], 9, 'bold'))
 
-        self.root.after(45, self._animate_automation_canvas)
+        # 55ms cycle provides cinematic, calm 18 FPS visualization instead of 40-60 FPS blur
+        self.root.after(55, self._animate_automation_canvas)
 
     def _start_run(self):
         path = self.path_var.get().strip()
@@ -335,6 +339,12 @@ class TraceVizApp:
                 out_err = path + '.errors.txt'
                 tv.render_html(root, header, error_index, stats, graph_json, out_html)
                 tv.write_error_file(error_index, out_err)
+
+            # Ensure the visualization has enough runway to be visibly clear
+            elapsed_work = time.time() - t0
+            if elapsed_work < MIN_VISUAL_TIME:
+                time.sleep(MIN_VISUAL_TIME - elapsed_work)
+
             self.msg_queue.put(('done', header, stats, out_html, out_err, time.time() - t0))
         except Exception as e:
             self.msg_queue.put(('error', str(e)))
