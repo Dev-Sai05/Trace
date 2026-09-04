@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-traceviz_app.py - AI Code Automation Flow Visualizer.
+traceviz_app.py - AI-Enhanced Desktop GUI for Trace Log Flow Visualizer.
 
 Run with:
     python3 traceviz_app.py
@@ -23,69 +23,60 @@ from tkinter import ttk
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import traceviz as tv
 
-# Matrix / Terminal Green AI Palette
-BG = '#050805'
+# High-Contrast Terminal Green AI Palette
+BG = '#040704'
 PANEL = '#09120a'
 PANEL2 = '#0d1a0f'
 LINE = '#132817'
-LINE_BRIGHT = '#1e3d24'
 GREEN = '#00ff66'
 GREEN_DIM = '#5cd685'
-GREEN_MUTED = '#235930'
-GREEN_DARK = '#0b2412'
+GREEN_MUTED = '#1e4a27'
+GREEN_DARK = '#07150a'
 AMBER = '#ffb84d'
 RED = '#ff4d6d'
 GRAY = '#4a6350'
 TEXT = '#d2f0da'
 
 MONO = ('Consolas', 10) if sys.platform.startswith('win') else ('Menlo', 10) if sys.platform == 'darwin' else ('DejaVu Sans Mono', 9)
-SANS = ('Segoe UI', 9) if sys.platform.startswith('win') else ('SF Pro Display', 9) if sys.platform == 'darwin' else ('DejaVu Sans', 9)
+SANS = ('Segoe UI', 10) if sys.platform.startswith('win') else ('SF Pro Display', 10) if sys.platform == 'darwin' else ('DejaVu Sans', 9)
 
-# Minimum visual showcase duration (seconds) so quick parses are still watchable
-MIN_VISUAL_TIME = 2.8
+# Minimum visual runtime (seconds) to prevent animations vanishing instantly on small traces
+MIN_VISUAL_TIME = 2.4
 
 
 class TraceVizApp:
     def __init__(self, root):
         self.root = root
-        self.root.title('TRACEVIEW AI // Automated Code & Execution Flow Visualizer')
-        self.root.geometry('980x740')
-        self.root.minsize(900, 660)
+        self.root.title('TRACEVIEW AI // Mainframe Cognitive Flow Visualizer')
+        self.root.geometry('960x740')
+        self.root.minsize(880, 660)
         self.root.configure(bg=BG)
 
         self.msg_queue = queue.Queue()
         self.worker = None
         self.result = None
 
-        # Automation visualizer state
+        # Automation & AI animation state
         self.is_running = False
         self.anim_tick = 0
-        self.stream_lines = []
-        self.code_tokens = [
-            'CALL SUB_EXEC()', 'PARM_RESOLVE', 'STACK_PUSH[0x4F]', 'LOOP_COLLAPSE',
-            'JMP_NZ 0x0041', 'HEAP_ALLOC', 'RESOLVE_PTR', 'EVAL_BRANCH',
-            'RECURSION_GUARD', 'REG_STORE R1', 'SCAN_TOKEN', 'UNWIND_FRAME'
+        self.ai_phase_idx = 0
+        self.ai_phases = [
+            'SYNAPSE INITIALIZATION...',
+            'INGESTING TRACE BYTE STREAM...',
+            'RECURSIVE GRAPH TRAVERSAL...',
+            'HEURISTIC LOOP COLLAPSE...',
+            'ANOMALY & ERROR ISOLATION...',
+            'SYNTHESIZING FLOW REPORT...'
         ]
-        
-        # Branch tree nodes for the visualizer
-        self.tree_nodes = [
-            {'x': 0.15, 'y': 0.50, 'label': 'ROOT'},
-            {'x': 0.32, 'y': 0.28, 'label': 'EXEC'},
-            {'x': 0.32, 'y': 0.72, 'label': 'FLOW'},
-            {'x': 0.50, 'y': 0.18, 'label': 'CALL'},
-            {'x': 0.50, 'y': 0.42, 'label': 'LOOP'},
-            {'x': 0.50, 'y': 0.68, 'label': 'COND'},
-            {'x': 0.68, 'y': 0.35, 'label': 'EVAL'},
-            {'x': 0.68, 'y': 0.82, 'label': 'RETURN'}
-        ]
-        self.tree_edges = [
-            (0, 1), (0, 2), (1, 3), (1, 4), (2, 5), (4, 6), (5, 7)
-        ]
+
+        # Background matrix rain state for the console panel
+        self.matrix_drops = []
+        self.matrix_chars = '01010110ABCDEF<>[]{}/*+$~=#'
 
         self._build_style()
         self._build_layout()
         self.root.after(100, self._poll_queue)
-        self._animate_automation_canvas()
+        self._animate_ai_canvas()
 
     def _build_style(self):
         style = ttk.Style()
@@ -93,7 +84,7 @@ class TraceVizApp:
             style.theme_use('clam')
         except tk.TclError:
             pass
-        style.configure('Green.Horizontal.TProgressbar',
+        style.configure('AI.Horizontal.TProgressbar',
                         troughcolor=PANEL2,
                         background=GREEN,
                         bordercolor=LINE,
@@ -106,35 +97,35 @@ class TraceVizApp:
 
     def _button(self, parent, text, cmd, **kw):
         return tk.Button(parent, text=text, command=cmd, bg=PANEL2, fg=GREEN,
-                         activebackground=LINE_BRIGHT, activeforeground=GREEN,
+                         activebackground=LINE, activeforeground=GREEN,
                          font=(MONO[0], 9, 'bold'), relief='flat', padx=12, pady=6,
                          cursor='hand2', highlightbackground=LINE, highlightthickness=1, **kw)
 
     def _build_layout(self):
-        # Header bar
+        # Top Header Bar
         header = tk.Frame(self.root, bg=BG)
-        header.pack(fill='x', padx=20, pady=(14, 6))
+        header.pack(fill='x', padx=20, pady=(14, 4))
 
         title_box = tk.Frame(header, bg=BG)
         title_box.pack(side='left')
 
         tk.Label(title_box, text='TRACEVIEW', bg=BG, fg=GREEN,
                  font=(MONO[0], 16, 'bold')).pack(side='left')
-        tk.Label(title_box, text=' [AI AUTOMATION ENGINE] ', bg=BG, fg=GREEN_DIM,
+        tk.Label(title_box, text=' [AI ENGINE] ', bg=BG, fg=GREEN_DIM,
                  font=(MONO[0], 10, 'bold')).pack(side='left')
-        tk.Label(title_box, text='// real-time code stream synthesizer',
+        tk.Label(title_box, text='// cognitive streaming flow visualizer',
                  bg=BG, fg=GRAY, font=MONO).pack(side='left')
 
-        # Designed by TCS Branding
-        brand_badge = tk.Frame(header, bg=PANEL2, highlightbackground=LINE_BRIGHT, highlightthickness=1)
+        # Branding: Designed by TCS
+        brand_badge = tk.Frame(header, bg=PANEL2, highlightbackground=LINE, highlightthickness=1)
         brand_badge.pack(side='right')
         tk.Label(brand_badge, text='Designed by TCS', bg=PANEL2, fg=GREEN,
                  font=(SANS[0], 9, 'bold'), padx=10, pady=4).pack()
 
-        # File picker
+        # File Picker Row
         picker = tk.Frame(self.root, bg=BG)
-        picker.pack(fill='x', padx=20, pady=(6, 6))
-        self._label(picker, 'Target Log:').pack(side='left')
+        picker.pack(fill='x', padx=20, pady=(10, 6))
+        self._label(picker, 'Target Trace:').pack(side='left')
 
         self.path_var = tk.StringVar()
         entry = tk.Entry(picker, textvariable=self.path_var, bg=PANEL2, fg=TEXT,
@@ -143,55 +134,62 @@ class TraceVizApp:
         entry.pack(side='left', fill='x', expand=True, padx=8, ipady=5)
         self._button(picker, 'Browse…', self._browse).pack(side='left', padx=(0, 4))
 
-        # Controls & trigger
+        # Options & Trigger
         opts = tk.Frame(self.root, bg=BG)
-        opts.pack(fill='x', padx=20, pady=(2, 6))
+        opts.pack(fill='x', padx=20, pady=(2, 8))
         self.stats_only_var = tk.BooleanVar(value=False)
-        cb = tk.Checkbutton(opts, text='Telemetry Scan Only (bypass HTML generation)',
+        cb = tk.Checkbutton(opts, text='Quick Scan (Telemetry Only, skip HTML generation)',
                             variable=self.stats_only_var, bg=BG, fg=TEXT,
                             selectcolor=PANEL2, activebackground=BG, activeforeground=TEXT,
                             font=MONO)
         cb.pack(side='left')
 
-        self.run_btn = self._button(opts, '▶ EXECUTE AI PIPELINE', self._start_run)
+        self.run_btn = self._button(opts, '⚡ EXECUTE AI AGENT', self._start_run)
         self.run_btn.pack(side='right')
 
-        # AI Execution & Automation Canvas
-        ai_shell = tk.Frame(self.root, bg=PANEL, highlightbackground=LINE_BRIGHT, highlightthickness=1)
-        ai_shell.pack(fill='x', padx=20, pady=(4, 6))
+        # AI Automation Canvas (Visualizer)
+        self.ai_frame = tk.Frame(self.root, bg=PANEL, highlightbackground=LINE, highlightthickness=1)
+        self.ai_frame.pack(fill='x', padx=20, pady=(0, 8))
 
-        top_info = tk.Frame(ai_shell, bg=PANEL)
+        top_info = tk.Frame(self.ai_frame, bg=PANEL)
         top_info.pack(fill='x', padx=10, pady=(6, 2))
 
-        self.pipeline_status = self._label(top_info, '● SYSTEM IDLE — AWAITING TRACE INGESTION',
-                                          bg=PANEL, fg=GRAY, font=(MONO[0], 9, 'bold'))
-        self.pipeline_status.pack(side='left')
+        self.phase_label = self._label(top_info, '● SYSTEM STANDBY: Awaiting execution',
+                                       bg=PANEL, fg=GRAY, font=(MONO[0], 9, 'bold'))
+        self.phase_label.pack(side='left')
 
-        self.telemetry_metrics = self._label(top_info, 'INSTRUCTION GRAPH: DORMANT',
-                                            bg=PANEL, fg=GRAY, font=(MONO[0], 9))
-        self.telemetry_metrics.pack(side='right')
+        self.nodes_label = self._label(top_info, 'NODES ACTIVE: 0 | STREAM: IDLE',
+                                       bg=PANEL, fg=GRAY, font=(MONO[0], 9))
+        self.nodes_label.pack(side='right')
 
-        self.canvas = tk.Canvas(ai_shell, bg='#030603', height=95, highlightthickness=0)
+        self.canvas = tk.Canvas(self.ai_frame, bg='#020502', height=76, highlightthickness=0)
         self.canvas.pack(fill='x', padx=8, pady=(2, 8))
 
         # Progress bar
         prog = tk.Frame(self.root, bg=BG)
-        prog.pack(fill='x', padx=20, pady=(0, 6))
-        self.progressbar = ttk.Progressbar(prog, style='Green.Horizontal.TProgressbar',
+        prog.pack(fill='x', padx=20, pady=(0, 8))
+        self.progressbar = ttk.Progressbar(prog, style='AI.Horizontal.TProgressbar',
                                            mode='determinate', maximum=100)
         self.progressbar.pack(fill='x')
-        self.progress_label = self._label(prog, 'Engine ready.', fg=GRAY)
+        self.progress_label = self._label(prog, 'Idle.', fg=GRAY)
         self.progress_label.pack(fill='x', pady=(4, 0))
 
-        # Console
+        # Terminal / AI Matrix Console Frame with Animated Canvas Backdrop
         console_frame = tk.Frame(self.root, bg=PANEL, highlightbackground=LINE, highlightthickness=1)
         console_frame.pack(fill='both', expand=True, padx=20, pady=(0, 8))
-        self.console = tk.Text(console_frame, bg='#040704', fg=GREEN_DIM, insertbackground=GREEN,
-                               font=MONO, relief='flat', wrap='word', height=10)
-        self.console.pack(fill='both', expand=True, padx=6, pady=6)
+
+        self.matrix_canvas = tk.Canvas(console_frame, bg='#030703', highlightthickness=0)
+        self.matrix_canvas.pack(fill='both', expand=True)
+
+        # Transparent terminal overlay layered over the animated canvas
+        self.console = tk.Text(self.matrix_canvas, bg='#030703', fg=GREEN_DIM,
+                               insertbackground=GREEN, font=MONO, relief='flat',
+                               wrap='word', height=10)
+        self.console_win = self.matrix_canvas.create_window(6, 6, anchor='nw', window=self.console)
+        self.matrix_canvas.bind('<Configure>', self._on_console_resize)
         self.console.configure(state='disabled')
 
-        # Footer Actions
+        # Summary & Actions
         self.summary_frame = tk.Frame(self.root, bg=PANEL, highlightbackground=LINE, highlightthickness=1)
         self.summary_frame.pack(fill='x', padx=20, pady=(0, 14))
 
@@ -202,9 +200,15 @@ class TraceVizApp:
                                             self._open_report, state='disabled')
         self.open_report_btn.pack(side='right', padx=6, pady=6)
 
-        self.open_errors_btn = self._button(self.summary_frame, 'View Anomaly Log',
+        self.open_errors_btn = self._button(self.summary_frame, 'Inspect Anomalies',
                                             self._open_errors, state='disabled')
         self.open_errors_btn.pack(side='right', padx=6, pady=6)
+
+    def _on_console_resize(self, event):
+        w = max(10, event.width - 12)
+        h = max(10, event.height - 12)
+        self.matrix_canvas.coords(self.console_win, 6, 6)
+        self.matrix_canvas.itemconfigure(self.console_win, width=w, height=h)
 
     def _browse(self):
         path = filedialog.askopenfilename(title='Select trace log file',
@@ -218,77 +222,86 @@ class TraceVizApp:
         self.console.see('end')
         self.console.configure(state='disabled')
 
-    def _animate_automation_canvas(self):
+    def _animate_ai_canvas(self):
+        # 1. Top Wave & Neural Telemetry Canvas
         self.canvas.delete('all')
         w = self.canvas.winfo_width()
         h = self.canvas.winfo_height()
 
-        if w > 10:
+        if w > 1:
             if self.is_running:
-                # 1. Left side: Paced scrolling machine code & assembly disassembler
-                split_x = int(w * 0.70)
-                self.canvas.create_line(split_x, 6, split_x, h - 6, fill=LINE_BRIGHT, width=1)
+                # Vertical scanning line
+                scan_x = (self.anim_tick * 4) % w
+                self.canvas.create_line(scan_x, 0, scan_x, h, fill=GREEN_MUTED, width=1)
 
-                # Push instruction stream tokens every 6 ticks
-                if self.anim_tick % 6 == 0:
-                    hex_addr = f'0x{random.randint(0x1000, 0xFFFF):04X}'
-                    tok = random.choice(self.code_tokens)
-                    op_hex = f'{random.randint(0,255):02X} {random.randint(0,255):02X}'
-                    self.stream_lines.append(f'{hex_addr}  [{op_hex}]  {tok}')
-                    if len(self.stream_lines) > 5:
-                        self.stream_lines.pop(0)
+                # Telemetry wave
+                points = []
+                for x in range(0, w, 6):
+                    freq = 0.035
+                    y = (h / 2) + math.sin(x * freq + self.anim_tick * 0.09) * 18 * \
+                        math.cos((x + self.anim_tick) * 0.012)
+                    points.extend([x, y])
+                if len(points) >= 4:
+                    self.canvas.create_line(points, fill=GREEN, width=2, smooth=True)
 
-                # Render stream lines with smooth stepped brightness
-                for idx, line_text in enumerate(self.stream_lines):
-                    y = 16 + (idx * 16)
-                    intensity = int(70 + (idx / max(len(self.stream_lines), 1)) * 185)
-                    color = f'#00{intensity:02x}44' if idx < len(self.stream_lines)-1 else GREEN
-                    self.canvas.create_text(14, y, anchor='w', text=line_text,
-                                            fill=color, font=(MONO[0], 8))
-
-                # 2. Right side: AST Execution Tree & Flow Pulses
-                tree_w = w - split_x
-                t_base_x = split_x
-
-                # Render connecting branch wires
-                for u, v in self.tree_edges:
-                    x1 = t_base_x + int(self.tree_nodes[u]['x'] * tree_w)
-                    y1 = int(self.tree_nodes[u]['y'] * h)
-                    x2 = t_base_x + int(self.tree_nodes[v]['x'] * tree_w)
-                    y2 = int(self.tree_nodes[v]['y'] * h)
-                    self.canvas.create_line(x1, y1, x2, y2, fill=GREEN_MUTED, width=1)
-
-                    # Smooth packet traveling across branches
-                    pkt_progress = (self.anim_tick * 0.025 + (u + v) * 0.25) % 1.0
-                    px = x1 + (x2 - x1) * pkt_progress
-                    py = y1 + (y2 - y1) * pkt_progress
-                    self.canvas.create_oval(px - 2.5, py - 2.5, px + 2.5, py + 2.5, fill=GREEN, outline='')
-
-                # Render AST execution nodes
-                for i, node in enumerate(self.tree_nodes):
-                    nx = t_base_x + int(node['x'] * tree_w)
-                    ny = int(node['y'] * h)
-                    pulse = math.sin(self.anim_tick * 0.10 + i)
-                    rad = 3 + int(pulse * 1.5)
-                    
+                # Floating neural node pulses
+                random.seed(42)
+                for i in range(12):
+                    nx = (i * (w / 12) + math.sin(self.anim_tick * 0.06 + i) * 16) % w
+                    ny = 15 + ((i * 23 + self.anim_tick * 2) % (h - 30))
+                    rad = 3 + math.sin(self.anim_tick * 0.15 + i) * 2
                     self.canvas.create_oval(nx - rad, ny - rad, nx + rad, ny + rad,
-                                            fill=GREEN if pulse > 0.3 else GREEN_MUTED, outline='')
-                    self.canvas.create_text(nx, ny - 8, text=node['label'],
-                                            fill=GREEN_DIM if pulse > 0.3 else GRAY,
-                                            font=(MONO[0], 7))
+                                            fill=GREEN if i % 3 == 0 else GREEN_DIM, outline='')
+                    if i > 0:
+                        prev_x = ((i - 1) * (w / 12) + math.sin(self.anim_tick * 0.06 + (i - 1)) * 16) % w
+                        self.canvas.create_line(nx, ny, prev_x, h / 2, fill=GREEN_DARK, width=1)
 
-                # 3. Controlled speed radar beam sweep
-                sweep_x = (self.anim_tick * 3) % w
-                self.canvas.create_line(sweep_x, 0, sweep_x, h, fill=LINE_BRIGHT, width=1)
-
-                self.anim_tick += 1
+                # Update live telemetry indicators
+                if self.anim_tick % 16 == 0:
+                    self.ai_phase_idx = (self.ai_phase_idx + 1) % len(self.ai_phases)
+                    self.phase_label.configure(
+                        text=f'⚡ AI PIPELINE ACTIVE: {self.ai_phases[self.ai_phase_idx]}',
+                        fg=GREEN)
+                    self.nodes_label.configure(
+                        text=f'NEURAL NODES: 64 ACTIVE | ENTROPY: {random.uniform(0.12, 0.44):.3f}',
+                        fg=GREEN_DIM)
             else:
-                # Idle state
                 self.canvas.create_line(0, h / 2, w, h / 2, fill=GREEN_DARK, width=1, dash=(4, 6))
-                self.canvas.create_text(w / 2, h / 2, text='[ CODE AUTOMATION PIPELINE READY ]',
+                self.canvas.create_text(w / 2, h / 2, text='AI STREAM ANALYZER STANDBY',
                                         fill=GREEN_MUTED, font=(MONO[0], 9, 'bold'))
 
-        self.root.after(55, self._animate_automation_canvas)
+        # 2. Lower Console Matrix Rain Animation
+        mw = self.matrix_canvas.winfo_width()
+        mh = self.matrix_canvas.winfo_height()
+        if mw > 20 and mh > 20:
+            cols = max(1, mw // 22)
+            while len(self.matrix_drops) < cols:
+                self.matrix_drops.append(random.randint(-20, mh))
+
+            self.matrix_canvas.delete('matrix_stream')
+            if self.is_running:
+                for i in range(cols):
+                    x = i * 22 + 10
+                    y = self.matrix_drops[i]
+                    char = random.choice(self.matrix_chars)
+
+                    # Matrix streaming trace
+                    self.matrix_canvas.create_text(x, y, text=char, fill=GREEN,
+                                                   font=(MONO[0], 8), tags='matrix_stream')
+                    for trail_idx in range(1, 4):
+                        trail_y = y - (trail_idx * 14)
+                        if trail_y > 0:
+                            self.matrix_canvas.create_text(x, trail_y,
+                                                           text=random.choice(self.matrix_chars),
+                                                           fill=GREEN_MUTED, font=(MONO[0], 7),
+                                                           tags='matrix_stream')
+
+                    self.matrix_drops[i] += 6
+                    if self.matrix_drops[i] > mh:
+                        self.matrix_drops[i] = random.randint(-40, 0)
+
+        self.anim_tick += 1
+        self.root.after(50, self._animate_ai_canvas)
 
     def _start_run(self):
         path = self.path_var.get().strip()
@@ -302,22 +315,18 @@ class TraceVizApp:
             return
 
         self.is_running = True
-        self.stream_lines.clear()
         self.console.configure(state='normal')
         self.console.delete('1.0', 'end')
         self.console.configure(state='disabled')
         self.open_report_btn.configure(state='disabled')
         self.open_errors_btn.configure(state='disabled')
         self.summary_label.configure(text='')
-        self.run_btn.configure(state='disabled', text='AUTOMATION RUNNING...')
+        self.run_btn.configure(state='disabled', text='PROCESSING...')
         self.progressbar['value'] = 0
-        self.progress_label.configure(text='Initializing stream parser engines...', fg=GREEN_DIM)
+        self.progress_label.configure(text='Spinning up parsing engines...', fg=GREEN)
 
-        self.pipeline_status.configure(text='● AI AGENT ACTIVE — PARSING & REDUCING FLOW', fg=GREEN)
-        self.telemetry_metrics.configure(text='SYNAPSE: LIVE STREAMING', fg=GREEN_DIM)
-
-        self._log('[AI AGENT] Stream disassembly engine engaged.')
-        self._log(f'[TARGET LOG] {path}')
+        self._log('[AI INIT] Autonomous stream parsing triggered...')
+        self._log(f'[AI TARGET] {path}')
 
         stats_only = self.stats_only_var.get()
         self.worker = threading.Thread(target=self._worker_run, args=(path, stats_only), daemon=True)
@@ -356,43 +365,40 @@ class TraceVizApp:
                     _, line_no, pct, elapsed, stats = item
                     self.progressbar['value'] = pct if pct else 0
                     self.progress_label.configure(
-                        text=f'{line_no:,} instructions ingested  •  {elapsed:.1f}s elapsed  •  '
-                             f'{stats.get("loops", 0):,} loops collapsed  •  {stats.get("errors", 0):,} errors',
+                        text=f'{line_no:,} lines evaluated  •  {elapsed:.1f}s elapsed  •  '
+                             f'{stats.get("loops", 0):,} loops reduced  •  {stats.get("errors", 0):,} anomalies spotted',
                         fg=TEXT)
-                    self.telemetry_metrics.configure(
-                        text=f'INGESTION: {pct:.1f}% | ANOMALIES: {stats.get("errors", 0)}',
-                        fg=GREEN)
-                    self._log(f'  [TRACE] {line_no:,} lines ({pct:.1f}%) | '
+                    self._log(f'  [INGEST] {line_no:,} lines ({pct:.1f}%) | '
                               f'anomalies: {stats.get("errors", 0)} | collapsed loops: {stats.get("loops", 0)}')
                 elif kind == 'done':
                     self.is_running = False
-                    self.pipeline_status.configure(text='✓ FLOW REDUCTION & SYNTHESIS COMPLETE', fg=GREEN)
-                    self.telemetry_metrics.configure(text='STATE: RESOLVED', fg=GRAY)
+                    self.phase_label.configure(text='✓ PIPELINE RUN COMPLETE', fg=GREEN)
+                    self.nodes_label.configure(text='STREAM RESOLVED', fg=GRAY)
                     _, header, stats, out_html, out_err, total_time = item
                     self.progressbar['value'] = 100
-                    self.run_btn.configure(state='normal', text='▶ EXECUTE AI PIPELINE')
+                    self.run_btn.configure(state='normal', text='⚡ EXECUTE AI AGENT')
                     rc = header.get('rc')
                     rc_bad = rc is not None and str(rc).strip().lstrip('-').isdigit() and int(rc) != 0
 
-                    lines_str = f"{stats['lines']:,} lines"
-                    errors_str = f"{stats['errors']:,} errors"
-                    loops_str = f"{stats['loops']:,} loops saved"
-                    time_str = f"{stats['elapsed']:.2f} seconds"
-                    rc_str = str(rc) + (" (CRITICAL)" if rc_bad else " (NORMAL)")
+                    rc_str = f"{rc} [! CRITICAL NON-ZERO]" if rc_bad else f"{rc} [HEALTHY]"
+                    lines_str = f"{stats['lines']:,}"
+                    errors_str = f"{stats['errors']:,}"
+                    loops_str = f"{stats['loops']:,} instances ({stats['iter_saved']:,} saved)"
+                    time_str = f"{stats['elapsed']:.2f}s"
 
                     self._log('')
-                    self._log('┌──────────────── AI FLOW EXECUTION SUMMARY ────────────────┐')
-                    self._log(f'│ Program          : {header.get("program", ""):<39}│')
-                    self._log(f'│ Return Code (RC) : {rc_str:<39}│')
-                    self._log(f'│ Processed Lines  : {lines_str:<39}│')
-                    self._log(f'│ Isolated Errors  : {errors_str:<39}│')
-                    self._log(f'│ Collapsed Loops  : {loops_str:<39}│')
-                    self._log(f'│ Execution Time   : {time_str:<39}│')
-                    self._log('└───────────────────────────────────────────────────────────┘')
-                    self._log('[STATUS] Reports synthesized successfully.')
+                    self._log('════════════════ AI ANALYSIS MATRIX ════════════════')
+                    self._log(f'Target Program      : {header.get("program", "")}')
+                    self._log(f'Return Code (RC)    : {rc_str}')
+                    self._log(f'Total Lines Read    : {lines_str}')
+                    self._log(f'Anomalies Isolated  : {errors_str}')
+                    self._log(f'Loop Reduction      : {loops_str}')
+                    self._log(f'Total Synthesis Time: {time_str}')
+                    self._log('════════════════════════════════════════════════════')
+                    self._log('[AI READY] Reports synthesized.')
 
-                    summary = (f'RC={rc}   errors={stats["errors"]}   '
-                               f'collapsed loops={stats["loops"]:,}   time={stats["elapsed"]:.1f}s')
+                    summary = (f'RC={rc}   anomalies={stats["errors"]}   '
+                               f'loops reduced={stats["loops"]:,}   synthesis={stats["elapsed"]:.1f}s')
                     self.summary_label.configure(text=summary, fg=(RED if rc_bad or stats['errors'] else GREEN))
                     self.result = (out_html, out_err)
                     if out_html:
@@ -402,10 +408,10 @@ class TraceVizApp:
                 elif kind == 'error':
                     self.is_running = False
                     _, msg = item
-                    self.pipeline_status.configure(text='✕ PIPELINE ABORTED', fg=RED)
-                    self.run_btn.configure(state='normal', text='▶ EXECUTE AI PIPELINE')
+                    self.phase_label.configure(text='✕ PIPELINE ABORTED', fg=RED)
+                    self.run_btn.configure(state='normal', text='⚡ EXECUTE AI AGENT')
                     self._log(f'[FATAL ERROR] {msg}')
-                    messagebox.showerror('Parsing Error', msg)
+                    messagebox.showerror('AI Pipeline Error', msg)
         except queue.Empty:
             pass
         self.root.after(100, self._poll_queue)
