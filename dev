@@ -262,6 +262,7 @@ class StreamGraph:
         self.steps = [] 
         self.edges = []
         self.last_idx = None
+        self.stack_indices = []
 
     def add(self, kind, label, depth, error=False, message=None, line_no=0):
         idx = len(self.steps)
@@ -269,7 +270,9 @@ class StreamGraph:
         if kind == 'module_unclosed':
             explain = "CRITICAL ABNORMAL EXIT: Driver function entered but never completed an EXIT block."
 
-        self.steps.append({
+        parent_idx = self.stack_indices[-1] if self.stack_indices else None
+
+        node_data = {
             'key': f"step_{idx}",
             'kind': kind,
             'label': label,
@@ -278,9 +281,21 @@ class StreamGraph:
             'count': 1,
             'first_line': line_no,
             'explain': explain,
-            'messages': [[message, 1]] if message else []
-        })
+            'messages': [[message, 1]] if message else [],
+            'children_indices': [],
+            'parent_idx': parent_idx
+        }
+        self.steps.append(node_data)
         
+        if parent_idx is not None and kind != 'module':
+            self.steps[parent_idx]['children_indices'].append(idx)
+
+        if kind == 'module':
+            self.stack_indices.append(idx)
+        elif kind in ('module_end', 'module_unclosed'):
+            if self.stack_indices:
+                self.stack_indices.pop()
+
         if self.last_idx is not None:
             is_cross_call = (self.steps[self.last_idx]['depth'] != depth) or (kind == 'module')
             self.edges.append({
@@ -505,6 +520,12 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
 .pipe-depth { font-size:10px; color:var(--gray); background:var(--bg); padding:2px 6px; border-radius:3px; }
 .pipe-label { font-weight:bold; color:var(--text); }
 .pipe-explain { font-size:11px; color:var(--green-dim); font-style:italic; }
+
+.sub-para-list { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.sub-para-item { padding: 4px 6px; margin-bottom: 4px; background: var(--panel2); border-radius: 3px; font-size: 10.5px; }
+.sub-para-item.item-error { border-left: 2px solid var(--red); color: var(--red); }
+.sub-para-item.item-step { border-left: 2px solid var(--cyan); }
+.sub-para-item.item-status { border-left: 2px solid var(--green); }
 </style></head>
 <body>
 <div class="wrap">
@@ -535,6 +556,8 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
       <div class="flowcols">
         <div class="flowdiagram">
           <div class="canvas-toolbar">
+            <button id="flowExpandAllBtn">Expand all</button>
+            <button id="flowCollapseAllBtn">Collapse all</button>
             <button id="zoomOutBtn">\u2212</button>
             <span id="zoomLabel">100%</span>
             <button id="zoomInBtn">+</button>
@@ -607,13 +630,45 @@ function showLogPreview(n){
   if(n.messages && n.messages.length) {
     msgs = '<br><br><strong>Log Context:</strong><br>' + n.messages.map(m=>esc(m[0])).join('\n');
   }
-  body.innerHTML = `<strong>${esc(labelFor(n))}</strong><br><br>Invoked at trace line: ${n.first_line}<br>Stack Indentation Level: ${n.depth}<br><br><em>${esc(n.explain||'')}</em>${msgs}`;
+
+  let subList = '';
+  if(n.kind === 'module') {
+    const children = (n.children_indices || []).map(idx => GRAPH.nodes[idx]).filter(Boolean);
+    if(children.length > 0) {
+      subList = `<div class="sub-para-list"><strong>Internal Steps (${children.length}):</strong><br>`;
+      children.forEach(c => {
+        let itemCls = 'item-step';
+        if(c.error) itemCls = 'item-error';
+        else if(c.kind === 'status') itemCls = 'item-status';
+        let detail = c.messages && c.messages.length ? ` — ${esc(c.messages[0][0])}` : '';
+        subList += `<div class="sub-para-item ${itemCls}">[L${c.first_line}] ${esc(c.label)}${detail}</div>`;
+      });
+      subList += `</div>`;
+    } else {
+      subList = `<div class="sub-para-list"><em>No internal steps detected inside this routine.</em></div>`;
+    }
+  }
+
+  body.innerHTML = `<strong>${esc(labelFor(n))}</strong><br><br>Invoked at trace line: ${n.first_line}<br>Stack Indentation Level: ${n.depth}<br><br><em>${esc(n.explain||'')}</em>${msgs}${subList}`;
 }
 
-function drawEdges(){
+function getVisibleNodes() {
+  return GRAPH.nodes.filter(n => {
+    let cur = n;
+    while(cur && cur.parent_idx !== null && cur.parent_idx !== undefined) {
+      let parent = GRAPH.nodes[cur.parent_idx];
+      if(parent && parent.is_collapsed) return false;
+      cur = parent;
+    }
+    return true;
+  });
+}
+
+function drawEdges(visibleNodes){
   const svg = document.getElementById('flowSvg');
   svg.innerHTML = '';
-  const w = GRAPH.width + OFF_X*2 + GRAPH.box_w, h = GRAPH.height + OFF_Y*2 + GRAPH.box_h + 100;
+  const visKeys = new Set(visibleNodes.map(n => n.key));
+  const w = GRAPH.width + OFF_X*2 + GRAPH.box_w, h = (visibleNodes.length * 75) + OFF_Y*2 + GRAPH.box_h + 100;
   svg.setAttribute('width', w); svg.setAttribute('height', h);
   const NS = 'http://www.w3.org/2000/svg';
   
@@ -624,18 +679,19 @@ function drawEdges(){
   svg.appendChild(defs);
 
   const bw = GRAPH.box_w, bh = GRAPH.box_h;
-  GRAPH.edges.forEach(e=>{
-    const a = nodeByKey[e.from], b = nodeByKey[e.to];
-    if(!a || !b) return;
+  for(let i = 0; i < visibleNodes.length - 1; i++){
+    const a = visibleNodes[i];
+    const b = visibleNodes[i+1];
     
     let color = '#5b7a63'; 
-    if(e.kind === 'ERROR') color = '#ff5c5c';
-    else if(e.kind === 'CALL') color = '#6fd7e8';
+    let kind = 'NEXT';
+    if(b.error) { color = '#ff5c5c'; kind = 'ERROR'; }
+    else if(b.kind === 'module') { color = '#6fd7e8'; kind = 'CALL'; }
     
     const path = document.createElementNS(NS,'path');
     let d;
 
-    if(a.layer === b.layer && e.kind !== 'CALL'){
+    if(a.layer === b.layer && kind !== 'CALL'){
       const x = a.x + OFF_X + bw/2;
       d = `M ${x} ${a.y+OFF_Y+bh} L ${x} ${b.y+OFF_Y}`;
     } else {
@@ -649,19 +705,25 @@ function drawEdges(){
     path.setAttribute('d', d);
     path.setAttribute('fill','none');
     path.setAttribute('stroke', color);
-    path.setAttribute('stroke-width', e.kind==='ERROR' ? 2.2 : 1.5);
-    path.setAttribute('marker-end', `url(#arrow-${e.kind || 'NEXT'})`);
+    path.setAttribute('stroke-width', b.error ? 2.2 : 1.5);
+    path.setAttribute('marker-end', `url(#arrow-${kind})`);
     svg.appendChild(path);
-  });
+  }
 }
 
 function renderFlowDiagram(){
   const canvas = document.getElementById('flowCanvas');
   canvas.querySelectorAll('.flowbox').forEach(b=>b.remove());
-  const w = GRAPH.width + OFF_X*2 + GRAPH.box_w, h = GRAPH.height + OFF_Y*2 + GRAPH.box_h + 100;
+  
+  const visibleNodes = getVisibleNodes();
+  visibleNodes.forEach((n, idx) => {
+    n.y = idx * 75;
+  });
+
+  const w = GRAPH.width + OFF_X*2 + GRAPH.box_w, h = (visibleNodes.length * 75) + OFF_Y*2 + GRAPH.box_h + 100;
   canvas.style.width = w+'px'; canvas.style.height = h+'px';
 
-  GRAPH.nodes.forEach(n=>{
+  visibleNodes.forEach(n=>{
     let cls = 't-step';
     if(n.error && n.kind === 'module_unclosed') cls = 't-module-unclosed';
     else if(n.error) cls = 't-error';
@@ -673,12 +735,24 @@ function renderFlowDiagram(){
     const box = el('div', 'flowbox ' + cls);
     box.style.left = (n.x+OFF_X)+'px'; box.style.top = (n.y+OFF_Y)+'px';
     box.style.width = GRAPH.box_w+'px'; box.style.height = GRAPH.box_h+'px';
-    box.appendChild(el('span','lbl', esc(labelFor(n))));
+    
+    let prefix = '';
+    if(n.kind === 'module' && n.children_indices && n.children_indices.length) {
+      prefix = `<span style="font-size:10px;margin-right:4px;">${n.is_collapsed ? '\u25b8' : '\u25be'}</span>`;
+    }
+    box.appendChild(el('span','lbl', prefix + esc(labelFor(n))));
+    
     box.addEventListener('mouseenter', ()=> { showLogPreview(n); });
-    box.addEventListener('click', ()=> { showLogPreview(n); });
+    box.addEventListener('click', ()=> { 
+      showLogPreview(n);
+      if(n.kind === 'module' && n.children_indices && n.children_indices.length) {
+        n.is_collapsed = !n.is_collapsed;
+        renderFlowDiagram();
+      }
+    });
     canvas.appendChild(box);
   });
-  drawEdges();
+  drawEdges(visibleNodes);
 }
 
 function renderPipelineView() {
@@ -722,6 +796,15 @@ function clampScale(s){ return Math.min(3, Math.max(0.15, s)); }
   document.getElementById('zoomInBtn').addEventListener('click', ()=>{ view.scale = clampScale(view.scale*1.1); applyView(); });
   document.getElementById('zoomOutBtn').addEventListener('click', ()=>{ view.scale = clampScale(view.scale*0.9); applyView(); });
   document.getElementById('zoomResetBtn').addEventListener('click', resetView);
+
+  document.getElementById('flowExpandAllBtn').addEventListener('click', ()=>{
+    GRAPH.nodes.forEach(n => { if(n.kind === 'module') n.is_collapsed = false; });
+    renderFlowDiagram();
+  });
+  document.getElementById('flowCollapseAllBtn').addEventListener('click', ()=>{
+    GRAPH.nodes.forEach(n => { if(n.kind === 'module') n.is_collapsed = true; });
+    renderFlowDiagram();
+  });
 })();
 
 function switchTab(which){
