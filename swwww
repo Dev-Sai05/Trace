@@ -229,7 +229,7 @@ class TraceVizApp:
                 split_x = int(w * 0.70)
                 self.canvas.create_line(split_x, 6, split_x, h - 6, fill=LINE_BRIGHT, width=1)
 
-                # Push instruction stream tokens every 6 ticks (slower and readable)
+                # Push instruction stream tokens every 6 ticks
                 if self.anim_tick % 6 == 0:
                     hex_addr = f'0x{random.randint(0x1000, 0xFFFF):04X}'
                     tok = random.choice(self.code_tokens)
@@ -258,7 +258,7 @@ class TraceVizApp:
                     y2 = int(self.tree_nodes[v]['y'] * h)
                     self.canvas.create_line(x1, y1, x2, y2, fill=GREEN_MUTED, width=1)
 
-                    # Smooth, slower packet traveling across branches
+                    # Smooth packet traveling across branches
                     pkt_progress = (self.anim_tick * 0.025 + (u + v) * 0.25) % 1.0
                     px = x1 + (x2 - x1) * pkt_progress
                     py = y1 + (y2 - y1) * pkt_progress
@@ -288,7 +288,6 @@ class TraceVizApp:
                 self.canvas.create_text(w / 2, h / 2, text='[ CODE AUTOMATION PIPELINE READY ]',
                                         fill=GREEN_MUTED, font=(MONO[0], 9, 'bold'))
 
-        # 55ms cycle provides cinematic, calm 18 FPS visualization instead of 40-60 FPS blur
         self.root.after(55, self._animate_automation_canvas)
 
     def _start_run(self):
@@ -340,7 +339,6 @@ class TraceVizApp:
                 tv.render_html(root, header, error_index, stats, graph_json, out_html)
                 tv.write_error_file(error_index, out_err)
 
-            # Ensure the visualization has enough runway to be visibly clear
             elapsed_work = time.time() - t0
             if elapsed_work < MIN_VISUAL_TIME:
                 time.sleep(MIN_VISUAL_TIME - elapsed_work)
@@ -376,14 +374,20 @@ class TraceVizApp:
                     rc = header.get('rc')
                     rc_bad = rc is not None and str(rc).strip().lstrip('-').isdigit() and int(rc) != 0
 
+                    lines_str = f"{stats['lines']:,} lines"
+                    errors_str = f"{stats['errors']:,} errors"
+                    loops_str = f"{stats['loops']:,} loops saved"
+                    time_str = f"{stats['elapsed']:.2f} seconds"
+                    rc_str = str(rc) + (" (CRITICAL)" if rc_bad else " (NORMAL)")
+
                     self._log('')
                     self._log('┌──────────────── AI FLOW EXECUTION SUMMARY ────────────────┐')
-                    self._log(f'│ Program          : {header.get("program"):<39}│')
-                    self._log(f'│ Return Code (RC) : {str(rc) + (" (CRITICAL)" if rc_bad else " (NORMAL)"):<39}│')
-                    self._log(f'│ Processed Lines  : {f"{stats[\"lines\"]:,} lines":<39}│')
-                    self._log(f'│ Isolated Errors  : {f"{stats[\"errors\"]:,} errors":<39}│')
-                    self._log(f'│ Collapsed Loops  : {f"{stats[\"loops\"]:,} loops saved":<39}│')
-                    self._log(f'│ Execution Time   : {f"{stats[\"elapsed\"]:.2f} seconds":<39}│')
+                    self._log(f'│ Program          : {header.get("program", ""):<39}│')
+                    self._log(f'│ Return Code (RC) : {rc_str:<39}│')
+                    self._log(f'│ Processed Lines  : {lines_str:<39}│')
+                    self._log(f'│ Isolated Errors  : {errors_str:<39}│')
+                    self._log(f'│ Collapsed Loops  : {loops_str:<39}│')
+                    self._log(f'│ Execution Time   : {time_str:<39}│')
                     self._log('└───────────────────────────────────────────────────────────┘')
                     self._log('[STATUS] Reports synthesized successfully.')
 
