@@ -19,8 +19,8 @@ RE_BATCH   = re.compile(r'^\*\*\*\s*(\d+)\s*\*\*\*$')
 RE_HSTART  = re.compile(r'^\*\*\*\s*Start of\s+(\S+)\s+at\s+(.+?)\**$', re.I)
 RE_HEND    = re.compile(r'^\*\*\*\s*End\s+of\s+(\S+)\s+at\s+(.+?)(?:-\s*RC\s*=\s*(-?\d+))?\**$', re.I)
 RE_DISPLAY = re.compile(r'^-\s*\|(\d{2}:\d{2}:\d{2}\.\d+)\|\s*(.+?)\s*$')
-RE_STATUS  = re.compile(r'^([A-Z0-9]+)\((.+?)\):(.+)$')
-RE_PARA    = re.compile(r'^[A-Z][A-Z0-9]{0,6}-[A-Z0-9-]+$')
+RE_STATUS  = re.compile(r'^([A-Z0-9]+):?\((.+?)\):?\s*(.*)$')
+RE_PARA    = re.compile(r'^(?:[A-Z0-9]{1,8}(?:-[A-Z0-9]+)+|[A-Z][0-9]{2,4}[A-Z0-9]?)$')
 RE_ERRTXT  = re.compile(r'error|abend|fail(?:ed|ure)?|exception', re.I)
 
 # C-Support / DBIO Driver Specific Function Scoping Regexes
@@ -287,7 +287,8 @@ class StreamGraph:
         }
         self.steps.append(node_data)
         
-        if parent_idx is not None and kind != 'module':
+        # Link every step/status/nested routine to its active parent module
+        if parent_idx is not None:
             self.steps[parent_idx]['children_indices'].append(idx)
 
         if kind == 'module':
@@ -351,7 +352,7 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
 
             frame = stack[-1]
 
-            # 1. Check Standard Start/End Markers
+            # 1. Standard Start/End Markers
             if line.startswith('START OF '):
                 name = line[9:].strip()
                 stack.append(Frame(name))
@@ -378,7 +379,7 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                 if not found: stats['unmatched_end'] += 1
                 continue
 
-            # 2. Check Driver FUNCTION ENTRY
+            # 2. Driver FUNCTION ENTRY/EXIT
             m_entry = RE_DRIVER_ENTRY.search(line)
             if m_entry:
                 mod_name = f"{m_entry.group(1)}:{m_entry.group(3)}"
@@ -387,7 +388,6 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                 graph.add('module', mod_name, len(stack) - 2, line_no=line_no)
                 continue
 
-            # 3. Check Driver FUNCTION EXIT
             m_exit = RE_DRIVER_EXIT.search(line)
             if m_exit:
                 mod_name = f"{m_exit.group(1)}:{m_exit.group(3)}"
@@ -403,7 +403,7 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                         break
                 continue
 
-            # 4. Check Timestamped BINTIME Driver Logs
+            # 3. Timestamped BINTIME Driver Logs
             m_bin = RE_BINTIME_TAG.search(line)
             if m_bin:
                 ts_text = m_bin.group(3)
@@ -414,7 +414,7 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                 graph.add('status', ts_text[:40], len(stack) - 1, error=err, message=ts_text, line_no=line_no)
                 continue
 
-            # 5. Check General Status/Error Lines
+            # 4. Status Lines
             m = RE_STATUS.match(line)
             if m:
                 prog, para, msg = m.group(1), m.group(2), m.group(3)
@@ -425,7 +425,14 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                 graph.add('status', f"{prog}({para})", len(stack) - 1, error=err, message=msg, line_no=line_no)
                 continue
 
-            # 6. Fallback Parsing
+            # 5. COBOL Paragraph Names (e.g., A000-CONTROL-PARA, B000-INIT-TABLE, A204)
+            if RE_PARA.match(line):
+                frame.buffer.append({'type': 'step', 'name': line})
+                stats['steps'] += 1
+                graph.add('step', line, len(stack) - 1, line_no=line_no)
+                continue
+
+            # 6. Fallback Error Logging
             err = is_error_text(line)
             if err:
                 error_index.append({'line': line_no, 'para': 'LOG', 'message': line, 'ts': None})
@@ -521,11 +528,13 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
 .pipe-label { font-weight:bold; color:var(--text); }
 .pipe-explain { font-size:11px; color:var(--green-dim); font-style:italic; }
 
-.sub-para-list { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); }
-.sub-para-item { padding: 4px 6px; margin-bottom: 4px; background: var(--panel2); border-radius: 3px; font-size: 10.5px; }
-.sub-para-item.item-error { border-left: 2px solid var(--red); color: var(--red); }
-.sub-para-item.item-step { border-left: 2px solid var(--cyan); }
-.sub-para-item.item-status { border-left: 2px solid var(--green); }
+.sub-para-list { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); }
+.sub-para-item { padding: 5px 8px; margin-bottom: 4px; background: var(--panel2); border-radius: 4px; font-size: 11px; border: 1px solid var(--line); word-break: break-all; }
+.sub-para-item.item-error { border-left: 3px solid var(--red); color: var(--red); background: rgba(255,92,92,0.06); }
+.sub-para-item.item-module { border-left: 3px solid var(--cyan); color: var(--cyan); }
+.sub-para-item.item-end { border-left: 3px solid var(--gray); color: var(--gray); }
+.sub-para-item.item-status { border-left: 3px solid var(--green); }
+.sub-para-item.item-step { border-left: 3px solid var(--green-dim); color: var(--text); }
 </style></head>
 <body>
 <div class="wrap">
@@ -635,15 +644,27 @@ function showLogPreview(n){
   if(n.kind === 'module') {
     const children = (n.children_indices || []).map(idx => GRAPH.nodes[idx]).filter(Boolean);
     if(children.length > 0) {
-      subList = `<div class="sub-para-list"><strong>Internal Steps (${children.length}):</strong><br>`;
+      subList = `<div class="sub-para-list">
+        <div style="font-weight:bold;color:var(--green);margin-bottom:8px;font-size:11px;letter-spacing:1px;text-transform:uppercase;">
+          Inside Paragraphs & Steps (${children.length}):
+        </div>
+        <div style="max-height:360px;overflow-y:auto;padding-right:4px;">`;
       children.forEach(c => {
         let itemCls = 'item-step';
-        if(c.error) itemCls = 'item-error';
-        else if(c.kind === 'status') itemCls = 'item-status';
+        let badge = 'PARA';
+        if(c.error) { itemCls = 'item-error'; badge = 'ERR'; }
+        else if(c.kind === 'module') { itemCls = 'item-module'; badge = 'CALL'; }
+        else if(c.kind === 'module_end') { itemCls = 'item-end'; badge = 'END'; }
+        else if(c.kind === 'status') { itemCls = 'item-status'; badge = 'STATUS'; }
+        
         let detail = c.messages && c.messages.length ? ` — ${esc(c.messages[0][0])}` : '';
-        subList += `<div class="sub-para-item ${itemCls}">[L${c.first_line}] ${esc(c.label)}${detail}</div>`;
+        subList += `<div class="sub-para-item ${itemCls}">
+          <span style="color:var(--gray);margin-right:6px;">L${c.first_line}</span>
+          <span style="font-size:9px;padding:1px 4px;border-radius:2px;margin-right:4px;background:rgba(255,255,255,0.06);">${badge}</span>
+          <strong>${esc(c.label)}</strong>${detail}
+        </div>`;
       });
-      subList += `</div>`;
+      subList += `</div></div>`;
     } else {
       subList = `<div class="sub-para-list"><em>No internal steps detected inside this routine.</em></div>`;
     }
@@ -667,7 +688,6 @@ function getVisibleNodes() {
 function drawEdges(visibleNodes){
   const svg = document.getElementById('flowSvg');
   svg.innerHTML = '';
-  const visKeys = new Set(visibleNodes.map(n => n.key));
   const w = GRAPH.width + OFF_X*2 + GRAPH.box_w, h = (visibleNodes.length * 75) + OFF_Y*2 + GRAPH.box_h + 100;
   svg.setAttribute('width', w); svg.setAttribute('height', h);
   const NS = 'http://www.w3.org/2000/svg';
