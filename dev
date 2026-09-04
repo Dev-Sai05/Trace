@@ -425,7 +425,7 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                 graph.add('status', f"{prog}({para})", len(stack) - 1, error=err, message=msg, line_no=line_no)
                 continue
 
-            # 5. COBOL Paragraph Names (e.g., A000-CONTROL-PARA, B000-INIT-TABLE, A204)
+            # 5. COBOL Paragraph Names
             if RE_PARA.match(line):
                 frame.buffer.append({'type': 'step', 'name': line})
                 stats['steps'] += 1
@@ -465,9 +465,18 @@ HTML_TEMPLATE = r'''<!DOCTYPE html>
 --cyan:#6fd7e8;--amber:#ffb347;--red:#ff5c5c;--gray:#5c6b60;--text:#c9e6d2;}
 *{box-sizing:border-box;}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospace,"SF Mono",monospace;font-size:13px;height:100vh;}
-.wrap{display:flex;height:100vh;overflow:hidden;}
-.sidebar{width:340px;flex:0 0 340px;background:var(--panel);border-right:1px solid var(--line);padding:18px;height:100vh;overflow-y:auto;}
-.brand .t2{font-size:20px;color:var(--green);font-weight:700;margin-bottom:14px;}
+.wrap{display:flex;height:100vh;overflow:hidden;position:relative;}
+
+/* Minimizable Left Sidebar */
+.sidebar{width:340px;flex:0 0 340px;background:var(--panel);border-right:1px solid var(--line);padding:18px;height:100vh;overflow-y:auto;transition:all .2s ease-in-out;position:relative;}
+.sidebar.minimized{width:46px;flex:0 0 46px;padding:12px 6px;overflow:hidden;}
+.sidebar.minimized .sidebar-content{display:none;}
+.sidebar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.sidebar-toggle{background:var(--panel2);color:var(--green);border:1px solid var(--line);border-radius:4px;padding:4px 8px;cursor:pointer;font-family:inherit;font-size:12px;}
+.sidebar-toggle:hover{border-color:var(--green);}
+
+.brand .t1{font-size:11px;letter-spacing:3px;color:var(--gray);text-transform:uppercase;}
+.brand .t2{font-size:18px;color:var(--green);font-weight:700;letter-spacing:1px;}
 .stat{display:flex;justify-content:space-between;padding:5px 0;font-size:11px;border-bottom:1px dashed var(--line);}
 .stat .k{color:var(--gray);text-transform:uppercase;font-size:10px;}
 .stat .v{color:var(--text);font-weight:600;}
@@ -475,7 +484,8 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospa
 .errbox{margin-top:16px;border-top:1px solid var(--line);padding-top:10px;}
 .errbox h3{font-size:11px;color:var(--red);text-transform:uppercase;margin:0 0 8px;}
 .erritem{font-size:10.5px;color:var(--red);padding:4px 0;border-bottom:1px dashed rgba(255,92,92,0.2);}
-.main{flex:1;padding:24px 30px;height:100vh;overflow-y:scroll;display:flex;flex-direction:column;}
+
+.main{flex:1;padding:24px 30px;height:100vh;overflow-y:scroll;display:flex;flex-direction:column;min-width:0;}
 .headerbar h1{font-size:15px;margin:0 0 4px;}
 .headerbar .sub{font-size:11px;color:var(--gray);}
 .node{position:relative;margin:6px 0;}
@@ -518,8 +528,13 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
 .flowbox.t-step{color:var(--text);}
 .flowbox.t-status-success{color:var(--green);border-color:rgba(77,255,136,.35);}
 .flowbox.t-error{border-color:var(--red);color:var(--red);background:rgba(255,92,92,0.08);box-shadow:0 0 8px var(--red);}
-.logpreview{width:380px;background:#050705;border:1px solid var(--line);border-radius:6px;padding:12px;font-size:11px;color:var(--green-dim);height:100%;overflow-y:auto;}
+
+/* Execution Context Panel with Watermark */
+.logpreview-wrap{width:380px;background:#050705;border:1px solid var(--line);border-radius:6px;display:flex;flex-direction:column;height:100%;overflow:hidden;}
+.logpreview{flex:1;padding:14px;font-size:11px;color:var(--green-dim);overflow-y:auto;}
 .logpreview h4{margin:0 0 8px;color:var(--green);text-transform:uppercase;}
+.logpreview-footer{padding:8px 12px;background:var(--panel2);border-top:1px solid var(--line);font-size:10px;color:var(--gray);text-align:center;letter-spacing:1px;font-weight:600;text-transform:uppercase;}
+.logpreview-footer span{color:var(--green);font-weight:700;}
 
 .pipe-container { display:flex; flex-direction:column; gap:16px; padding:20px; background:var(--panel); border-radius:6px; height:100%; overflow-y:scroll; }
 .pipe-row { display:flex; align-items:center; gap:12px; padding:10px; background:var(--panel2); border-left:4px solid var(--cyan); border-radius:4px; }
@@ -538,10 +553,15 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
 </style></head>
 <body>
 <div class="wrap">
-  <div class="sidebar">
-    <div class="brand"><div class="t1">TRACEVIEW</div><div class="t2">FLOW REPORT</div></div>
-    <div id="stats"></div>
-    <div class="errbox" id="errbox"></div>
+  <div class="sidebar" id="sidebarPanel">
+    <div class="sidebar-header">
+      <div class="brand sidebar-content"><div class="t1">TRACEVIEW</div><div class="t2">FLOW REPORT</div></div>
+      <button class="sidebar-toggle" id="sidebarToggleBtn" title="Toggle Sidebar">◂</button>
+    </div>
+    <div class="sidebar-content">
+      <div id="stats"></div>
+      <div class="errbox" id="errbox"></div>
+    </div>
   </div>
   <div class="main">
     <div class="headerbar"><h1 id="ht"></h1><div class="sub" id="hs"></div></div>
@@ -578,9 +598,12 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
             </div>
           </div>
         </div>
-        <div class="logpreview" id="logPreview">
-          <h4>Execution Context</h4>
-          <div id="lp-body">Hover or select a timeline block to track execution line indices.</div>
+        <div class="logpreview-wrap">
+          <div class="logpreview">
+            <h4>Execution Context</h4>
+            <div id="lp-body">Hover or select a timeline block to track execution line indices.</div>
+          </div>
+          <div class="logpreview-footer">Designed and Developed by <span>TCS</span></div>
         </div>
       </div>
     </div>
@@ -594,6 +617,14 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
 const DATA = __DATA_JSON__;
 function esc(s){return (s+'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function el(tag,cls,html){const e=document.createElement(tag); if(cls)e.className=cls; if(html!==undefined)e.innerHTML=html; return e;}
+
+// Sidebar Minimize/Maximize Toggle
+document.getElementById('sidebarToggleBtn').addEventListener('click', ()=>{
+  const s = document.getElementById('sidebarPanel');
+  const btn = document.getElementById('sidebarToggleBtn');
+  const isMin = s.classList.toggle('minimized');
+  btn.textContent = isMin ? '▸' : '◂';
+});
 
 function renderNode(node){
   if(node.type==='module'){
