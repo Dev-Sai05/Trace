@@ -468,7 +468,7 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospa
 .wrap{display:flex;height:100vh;overflow:hidden;position:relative;}
 
 /* Minimizable Left Sidebar */
-.sidebar{width:340px;flex:0 0 340px;background:var(--panel);border-right:1px solid var(--line);padding:18px;height:100vh;overflow-y:auto;transition:all .2s ease-in-out;position:relative;}
+.sidebar{width:340px;flex:0 0 340px;background:var(--panel);border-right:1px solid var(--line);padding:18px;height:100vh;overflow-y:auto;transition:all .2s ease-in-out;position:relative;display:flex;flex-direction:column;}
 .sidebar.minimized{width:46px;flex:0 0 46px;padding:12px 6px;overflow:hidden;}
 .sidebar.minimized .sidebar-content{display:none;}
 .sidebar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
@@ -515,8 +515,25 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
 .crumbs{font-size:11px;color:var(--gray);margin-bottom:14px;padding:8px 10px;background:var(--panel);border:1px solid var(--line);border-radius:5px;}
 .flowcols{display:flex;gap:20px;align-items:flex-start;flex:1;min-height:0;height:100%;}
 .flowdiagram{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;}
+
+/* Watermarked Canvas Background */
 .flow-canvas-wrap{position:relative;flex:1;border:1px solid var(--line);border-radius:6px;overflow-y:scroll;overflow-x:auto;background:var(--bg);cursor:grab;}
-.flow-canvas{position:absolute;top:0;left:0;transform-origin:0 0;}
+.flow-watermark-bg{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%);
+  pointer-events:none;
+  opacity:0.045;
+  user-select:none;
+  z-index:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+.flow-watermark-bg svg{width:420px;height:420px;}
+.flow-canvas{position:absolute;top:0;left:0;transform-origin:0 0;z-index:1;}
 .connectors{position:absolute;top:0;left:0;pointer-events:none;overflow:visible;}
 .flowbox{position:absolute;border:1.5px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer;background:var(--panel2);display:flex;align-items:center;gap:8px;box-sizing:border-box;}
 .flowbox:hover{box-shadow:0 0 0 1px var(--green);z-index:5;}
@@ -529,14 +546,32 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
 .flowbox.t-status-success{color:var(--green);border-color:rgba(77,255,136,.35);}
 .flowbox.t-error{border-color:var(--red);color:var(--red);background:rgba(255,92,92,0.08);box-shadow:0 0 8px var(--red);}
 
-/* Execution Context Panel with Watermark */
+/* Common Panel Watermark Footers */
+.panel-footer-tcs{
+  padding:10px 14px;
+  background:var(--panel2);
+  border-top:1px solid var(--line);
+  font-size:10.5px;
+  color:var(--gray);
+  text-align:center;
+  letter-spacing:1px;
+  font-weight:600;
+  text-transform:uppercase;
+  flex-shrink:0;
+  margin-top:auto;
+}
+.panel-footer-tcs span{color:var(--green);font-weight:700;}
+
+/* Panel Wrappers for Tree and Pipeline Views */
+.tree-view-wrap{display:flex;flex-direction:column;height:100%;border:1px solid var(--line);border-radius:6px;background:var(--panel);overflow:hidden;}
+.tree-view-content{flex:1;padding:16px;overflow-y:auto;}
+
 .logpreview-wrap{width:380px;background:#050705;border:1px solid var(--line);border-radius:6px;display:flex;flex-direction:column;height:100%;overflow:hidden;}
 .logpreview{flex:1;padding:14px;font-size:11px;color:var(--green-dim);overflow-y:auto;}
 .logpreview h4{margin:0 0 8px;color:var(--green);text-transform:uppercase;}
-.logpreview-footer{padding:8px 12px;background:var(--panel2);border-top:1px solid var(--line);font-size:10px;color:var(--gray);text-align:center;letter-spacing:1px;font-weight:600;text-transform:uppercase;}
-.logpreview-footer span{color:var(--green);font-weight:700;}
 
-.pipe-container { display:flex; flex-direction:column; gap:16px; padding:20px; background:var(--panel); border-radius:6px; height:100%; overflow-y:scroll; }
+.pipe-wrapper{display:flex;flex-direction:column;height:100%;border:1px solid var(--line);border-radius:6px;background:var(--panel);overflow:hidden;}
+.pipe-container { display:flex; flex-direction:column; gap:16px; padding:20px; flex:1; overflow-y:scroll; }
 .pipe-row { display:flex; align-items:center; gap:12px; padding:10px; background:var(--panel2); border-left:4px solid var(--cyan); border-radius:4px; }
 .pipe-row.p-error { border-left-color:var(--red); background:rgba(255,92,92,0.04); }
 .pipe-depth { font-size:10px; color:var(--gray); background:var(--bg); padding:2px 6px; border-radius:3px; }
@@ -558,11 +593,13 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
       <div class="brand sidebar-content"><div class="t1">TRACEVIEW</div><div class="t2">FLOW REPORT</div></div>
       <button class="sidebar-toggle" id="sidebarToggleBtn" title="Toggle Sidebar">◂</button>
     </div>
-    <div class="sidebar-content">
+    <div class="sidebar-content" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
       <div id="stats"></div>
       <div class="errbox" id="errbox"></div>
     </div>
+    <div class="panel-footer-tcs sidebar-content" style="border-radius:4px;margin-top:14px;">Designed and Developed by <span>TCS</span></div>
   </div>
+
   <div class="main">
     <div class="headerbar"><h1 id="ht"></h1><div class="sub" id="hs"></div></div>
     <div class="narrative" id="narrative"><h3>What Happened</h3><div id="narrativeText"></div></div>
@@ -572,14 +609,21 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
       <button class="tabbtn" id="tabPipelineBtn">Code Pipeline View</button>
     </div>
 
+    <!-- Tree View with TCS Footer -->
     <div class="view active" id="viewTree">
-      <div>
-        <button onclick="document.querySelectorAll('.module').forEach(n=>n.classList.remove('collapsed'))">Expand all</button>
-        <button onclick="document.querySelectorAll('.module').forEach(n=>n.classList.add('collapsed'))">Collapse all</button>
+      <div class="tree-view-wrap">
+        <div style="padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel2);">
+          <button onclick="document.querySelectorAll('.module').forEach(n=>n.classList.remove('collapsed'))">Expand all</button>
+          <button onclick="document.querySelectorAll('.module').forEach(n=>n.classList.add('collapsed'))">Collapse all</button>
+        </div>
+        <div class="tree-view-content">
+          <div class="flow" id="flow"></div>
+        </div>
+        <div class="panel-footer-tcs">Designed and Developed by <span>TCS</span></div>
       </div>
-      <div class="flow" id="flow"></div>
     </div>
 
+    <!-- Vertical Flow Diagram with TCS Watermark Background -->
     <div class="view" id="viewFlow">
       <div class="crumbs" id="crumbs"></div>
       <div class="flowcols">
@@ -593,6 +637,13 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
             <button id="zoomResetBtn">Reset view</button>
           </div>
           <div class="flow-canvas-wrap" id="flowWrap">
+            <!-- TCS Watermark Embedded on Canvas Background -->
+            <div class="flow-watermark-bg">
+              <svg viewBox="0 0 600 300" fill="currentColor">
+                <text x="50%" y="45%" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif" font-size="140" font-weight="900" letter-spacing="12">TCS</text>
+                <text x="50%" y="70%" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif" font-size="28" font-weight="600" letter-spacing="6">TATA CONSULTANCY SERVICES</text>
+              </svg>
+            </div>
             <div class="flow-canvas" id="flowCanvas">
               <svg class="connectors" id="flowSvg"></svg>
             </div>
@@ -603,13 +654,17 @@ button{background:var(--panel2);color:var(--green);border:1px solid var(--line);
             <h4>Execution Context</h4>
             <div id="lp-body">Hover or select a timeline block to track execution line indices.</div>
           </div>
-          <div class="logpreview-footer">Designed and Developed by <span>TCS</span></div>
+          <div class="panel-footer-tcs">Designed and Developed by <span>TCS</span></div>
         </div>
       </div>
     </div>
 
+    <!-- Pipeline View with TCS Footer -->
     <div class="view" id="viewPipeline">
-      <div class="pipe-container" id="pipelineContainer"></div>
+      <div class="pipe-wrapper">
+        <div class="pipe-container" id="pipelineContainer"></div>
+        <div class="panel-footer-tcs">Designed and Developed by <span>TCS</span></div>
+      </div>
     </div>
   </div>
 </div>
@@ -719,6 +774,7 @@ function getVisibleNodes() {
 function drawEdges(visibleNodes){
   const svg = document.getElementById('flowSvg');
   svg.innerHTML = '';
+  const visKeys = new Set(visibleNodes.map(n => n.key));
   const w = GRAPH.width + OFF_X*2 + GRAPH.box_w, h = (visibleNodes.length * 75) + OFF_Y*2 + GRAPH.box_h + 100;
   svg.setAttribute('width', w); svg.setAttribute('height', h);
   const NS = 'http://www.w3.org/2000/svg';
