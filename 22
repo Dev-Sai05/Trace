@@ -603,3 +603,227 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+-----------------
+
+#!/usr/bin/env python3
+"""
+traceviz_app.py - Desktop GUI for the Trace Log Flow & Comparison Visualizer.
+
+Supports Single-File Flow Inspection and Dual-File Comparative Diff Evaluation.
+"""
+
+import os
+import queue
+import sys
+import threading
+import time
+import tkinter as tk
+import webbrowser
+from tkinter import filedialog, messagebox
+from tkinter import ttk
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import traceviz as tv
+
+BG = '#080b08'
+PANEL = '#0e140f'
+PANEL2 = '#101a12'
+LINE = '#1c2b1e'
+GREEN = '#4dff88'
+GREEN_DIM = '#7fb894'
+AMBER = '#ffb347'
+RED = '#ff5c5c'
+GRAY = '#5c6b60'
+TEXT = '#c9e6d2'
+MONO = ('Consolas', 10) if sys.platform.startswith('win') else ('Menlo', 11) if sys.platform == 'darwin' else ('DejaVu Sans Mono', 10)
+
+
+class TraceVizApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title('TRACEVIEW — Trace Log Flow & Comparative Diff Visualizer')
+        self.root.geometry('900x650')
+        self.root.configure(bg=BG)
+        self.msg_queue = queue.Queue()
+        self.worker = None
+        self.result = None
+
+        self._build_style()
+        self._build_layout()
+        self.root.after(120, self._poll_queue)
+
+    def _build_style(self):
+        style = ttk.Style()
+        try:
+            style.theme_use('clam')
+        except tk.TclError:
+            pass
+        style.configure('TProgressbar', troughcolor=PANEL2, background=GREEN,
+                         bordercolor=LINE, lightcolor=GREEN, darkcolor=GREEN)
+
+    def _label(self, parent, text, **kw):
+        return tk.Label(parent, text=text, bg=kw.pop('bg', BG), fg=kw.pop('fg', TEXT),
+                         font=kw.pop('font', MONO), anchor='w', **kw)
+
+    def _button(self, parent, text, cmd, **kw):
+        return tk.Button(parent, text=text, command=cmd, bg=PANEL2, fg=GREEN,
+                          activebackground=LINE, activeforeground=GREEN,
+                          font=MONO, relief='flat', padx=10, pady=6,
+                          highlightbackground=LINE, highlightthickness=1, **kw)
+
+    def _build_layout(self):
+        header = tk.Frame(self.root, bg=BG)
+        header.pack(fill='x', padx=18, pady=(16, 6))
+        tk.Label(header, text='TRACEVIEW', bg=BG, fg=GREEN, font=(MONO[0], 16, 'bold')).pack(side='left')
+        tk.Label(header, text='  //  diff regression & visual flow compiler', bg=BG, fg=GRAY, font=MONO).pack(side='left')
+
+        # File Picker 1: Before Change
+        row1 = tk.Frame(self.root, bg=BG)
+        row1.pack(fill='x', padx=18, pady=4)
+        self._label(row1, 'Trace (Before Change):').pack(side='left')
+        self.path_before_var = tk.StringVar()
+        e1 = tk.Entry(row1, textvariable=self.path_before_var, bg=PANEL2, fg=TEXT, insertbackground=GREEN, font=MONO, relief='flat')
+        e1.pack(side='left', fill='x', expand=True, padx=8, ipady=4)
+        self._button(row1, 'Browse…', self._browse_before).pack(side='left')
+
+        # File Picker 2: After Change
+        row2 = tk.Frame(self.root, bg=BG)
+        row2.pack(fill='x', padx=18, pady=4)
+        self._label(row2, 'Trace (After Change) :').pack(side='left')
+        self.path_after_var = tk.StringVar()
+        e2 = tk.Entry(row2, textvariable=self.path_after_var, bg=PANEL2, fg=TEXT, insertbackground=GREEN, font=MONO, relief='flat')
+        e2.pack(side='left', fill='x', expand=True, padx=8, ipady=4)
+        self._button(row2, 'Browse…', self._browse_after).pack(side='left')
+
+        # Execution Controls
+        opts = tk.Frame(self.root, bg=BG)
+        opts.pack(fill='x', padx=18, pady=(6, 8))
+        self.run_btn = self._button(opts, '▸ Compare Traces', self._start_run)
+        self.run_btn.pack(side='right')
+
+        # Progress Indicators
+        prog = tk.Frame(self.root, bg=BG)
+        prog.pack(fill='x', padx=18, pady=(0, 6))
+        self.progressbar = ttk.Progressbar(prog, mode='determinate', maximum=100)
+        self.progressbar.pack(fill='x')
+        self.progress_label = self._label(prog, 'Ready. Select Before & After logs to run comparative analysis.', fg=GRAY)
+        self.progress_label.pack(fill='x', pady=(4, 0))
+
+        # Output Console
+        console_frame = tk.Frame(self.root, bg=PANEL, highlightbackground=LINE, highlightthickness=1)
+        console_frame.pack(fill='both', expand=True, padx=18, pady=(0, 8))
+        self.console = tk.Text(console_frame, bg='#050705', fg=GREEN_DIM, insertbackground=GREEN,
+                                font=MONO, relief='flat', wrap='word', height=12)
+        self.console.pack(fill='both', expand=True, padx=6, pady=6)
+        self.console.configure(state='disabled')
+
+        # Summary Bar & Launcher
+        self.summary_frame = tk.Frame(self.root, bg=PANEL)
+        self.summary_frame.pack(fill='x', padx=18, pady=(0, 16))
+        self.summary_label = self._label(self.summary_frame, '', bg=PANEL, fg=TEXT)
+        self.summary_label.pack(side='left', padx=10, pady=8)
+        self.open_report_btn = self._button(self.summary_frame, 'Open Comparison Matrix', self._open_report, state='disabled')
+        self.open_report_btn.pack(side='right', padx=6, pady=6)
+
+    def _browse_before(self):
+        p = filedialog.askopenfilename(title='Select BEFORE Change Trace Log', filetypes=[('Log/Trace/Txt', '*.log *.trc *.txt *.out'), ('All files', '*.*')])
+        if p:
+            self.path_before_var.set(p)
+
+    def _browse_after(self):
+        p = filedialog.askopenfilename(title='Select AFTER Change Trace Log', filetypes=[('Log/Trace/Txt', '*.log *.trc *.txt *.out'), ('All files', '*.*')])
+        if p:
+            self.path_after_var.set(p)
+
+    def _log(self, text):
+        self.console.configure(state='normal')
+        self.console.insert('end', text + '\n')
+        self.console.see('end')
+        self.console.configure(state='disabled')
+
+    def _start_run(self):
+        path_b = self.path_before_var.get().strip()
+        path_a = self.path_after_var.get().strip()
+
+        if not path_b or not os.path.isfile(path_b):
+            messagebox.showwarning('Invalid Input', 'Please select a valid "Before Change" trace log file.')
+            return
+
+        if not path_a or not os.path.isfile(path_a):
+            messagebox.showwarning('Invalid Input', 'Please select a valid "After Change" trace log file.')
+            return
+
+        self.console.configure(state='normal')
+        self.console.delete('1.0', 'end')
+        self.console.configure(state='disabled')
+        self.open_report_btn.configure(state='disabled')
+        self.run_btn.configure(state='disabled', text='Analyzing...')
+        self.progressbar['value'] = 20
+        self.progress_label.configure(text='Parsing streams and compiling sequence difference matrix...')
+        self._log(f'Before Log: {path_b}')
+        self._log(f'After Log : {path_a}')
+
+        self.worker = threading.Thread(target=self._worker_run, args=(path_b, path_a), daemon=True)
+        self.worker.start()
+
+    def _worker_run(self, path_b, path_a):
+        t0 = time.time()
+        try:
+            out_file, stats_b, stats_a = tv.compare_traces(path_b, path_a)
+            self.msg_queue.put(('done', out_file, stats_b, stats_a, time.time() - t0))
+        except Exception as e:
+            self.msg_queue.put(('error', str(e)))
+
+    def _poll_queue(self):
+        try:
+            while True:
+                item = self.msg_queue.get_nowait()
+                kind = item[0]
+                if kind == 'done':
+                    _, out_file, sb, sa, elapsed = item
+                    self.progressbar['value'] = 100
+                    self.run_btn.configure(state='normal', text='▸ Compare Traces')
+                    self.progress_label.configure(text='Analysis complete.')
+                    
+                    d_steps = sa['steps'] - sb['steps']
+                    d_db = sa['db_calls'] - sb['db_calls']
+
+                    self._log('')
+                    self._log('=== EXECUTION COMPARISON SUMMARY ===')
+                    self._log(f"Paragraphs (Steps) : Before={sb['steps']} | After={sa['steps']} (Delta: {'+' if d_steps>=0 else ''}{d_steps})")
+                    self._log(f"Database Operations: Before={sb['db_calls']} | After={sa['db_calls']} (Delta: {'+' if d_db>=0 else ''}{d_db})")
+                    self._log(f"Module Calls       : Before={sb['modules']} | After={sa['modules']}")
+                    self._log(f"Time Taken         : {elapsed:.2f}s")
+                    self._log(f"Report Location    : {out_file}")
+
+                    summary = f"Δ Steps: {'+' if d_steps>=0 else ''}{d_steps} | Δ DB Operations: {'+' if d_db>=0 else ''}{d_db}"
+                    self.summary_label.configure(text=summary, fg=GREEN)
+                    self.result = out_file
+                    self.open_report_btn.configure(state='normal')
+
+                elif kind == 'error':
+                    _, msg = item
+                    self.run_btn.configure(state='normal', text='▸ Compare Traces')
+                    self._log(f"ERROR: {msg}")
+                    messagebox.showerror('Analysis Failed', msg)
+        except queue.Empty:
+            pass
+        self.root.after(120, self._poll_queue)
+
+    def _open_report(self):
+        if self.result:
+            webbrowser.open('file://' + os.path.abspath(self.result))
+
+
+def main():
+    root = tk.Tk()
+    app = TraceVizApp(root)
+    root.mainloop()
+
+
+if __name__ == '__main__':
+    main()
+
