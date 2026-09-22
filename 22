@@ -1,8 +1,7 @@
-
 #!/usr/bin/env python3
 """
 traceviz.py - TRANDIFF: Transaction Trace Regression & Flow Diff Analyzer.
-Comparative Trace Execution Flow with CR Tracking & Difference Highlighting.
+Comparative Trace Execution Flow with CR Tracking & Auto-Naming.
 """
 
 import argparse
@@ -25,6 +24,7 @@ RE_DISPLAY = re.compile(r'^-\s*\|(\d{2}:\d{2}:\d{2}\.\d+)\|\s*(.+?)\s*$')
 RE_STATUS  = re.compile(r'^([A-Z0-9]+):?\((.+?)\):?\s*(.*)$')
 RE_PARA    = re.compile(r'^(?:[A-Z0-9]{1,8}(?:-[A-Z0-9]+)+|[A-Z][0-9]{2,4}[A-Z0-9]?)$')
 RE_ERRTXT  = re.compile(r'error|abend|fail(?:ed|ure)?|exception', re.I)
+RE_TXN     = re.compile(r'Txn:(\w+)', re.I)
 
 # Database operation identifiers
 RE_DB_CALL = re.compile(r'\b(DBIO|DBIODIST|SQLCODE|FETCH|READFIRST|READNEXT|CURSOR|COMMIT|ROLLBACK)\b|ENTRY\s*-\s*FUNCTION\s+(OPEN|READ|FETCH)', re.I)
@@ -204,7 +204,7 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
                   tail_keep=DEFAULT_TAIL_KEEP, max_details=DEFAULT_MAX_DETAILS, progress=True):
     root_frame = Frame('ROOT')
     stack = [root_frame]
-    header = {'program': None, 'start_at': None, 'end_at': None, 'rc': None}
+    header = {'program': None, 'start_at': None, 'end_at': None, 'rc': None, 'trancode': None}
     error_index = []
     stats = {'lines': 0, 'steps': 0, 'status': 0, 'errors': 0, 'modules': 0, 'loops': 0, 'iter_saved': 0, 'db_calls': 0}
     graph = StreamGraph()
@@ -224,6 +224,12 @@ def parse_stream(path, max_period=DEFAULT_MAX_PERIOD, flush_size=DEFAULT_FLUSH_S
             stats['lines'] = line_no
             if not line:
                 continue
+
+            # Identify transaction code
+            if not header['trancode']:
+                m_txn = RE_TXN.search(line)
+                if m_txn:
+                    header['trancode'] = m_txn.group(1)
 
             db_flag = is_db_call(line)
             if db_flag:
@@ -407,7 +413,7 @@ def compute_comparative_diff(graph_before, graph_after, box_w=240, indent_w=70):
 # HTML Presentation Engine (TRANDIFF with CR Number Tracking)
 # ---------------------------------------------------------------------------
 HTML_DIFF_TEMPLATE = r'''<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><title>TRANDIFF // CR-BASED FLOW COMPARISON</title>
+<html lang="en"><head><meta charset="UTF-8"><title>TRANDIFF // __TRANCODE__ - __CR_BEFORE__ to __CR_AFTER__</title>
 <style>
 :root{--bg:#080b08;--panel:#0e140f;--panel2:#101a12;--line:#1c2b1e;--green:#4dff88;--green-dim:#7fb894;
 --cyan:#6fd7e8;--amber:#ffb347;--red:#ff3b3b;--gray:#5c6b60;--text:#c9e6d2;}
@@ -539,7 +545,10 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospa
   <div class="main">
     <div class="top-header">
       <div class="cr-banner">
-        <span>CHANGE COMPARISON:</span>
+        <span style="color:var(--green-dim);margin-right:4px;">TRANCODE:</span>
+        <span class="cr-pill" style="border-color:var(--cyan);color:var(--cyan);" id="banner-trancode">TRAN</span>
+        <span style="margin:0 6px;color:var(--gray);">|</span>
+        <span>CR COMPARISON:</span>
         <span class="cr-pill" id="banner-cr-b">CR-BASE</span>
         <span style="color:var(--gray);">➔</span>
         <span class="cr-pill" id="banner-cr-a" style="border-color:var(--green);color:var(--green);">CR-TARGET</span>
@@ -608,7 +617,9 @@ function esc(s){return (s+'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':
 // Bind CR Labels
 const crBefore = DIFF_DATA.cr_before || 'CR-BASE';
 const crAfter  = DIFF_DATA.cr_after  || 'CR-TARGET';
+const trancode = DIFF_DATA.trancode  || 'TRANCODE';
 
+document.getElementById('banner-trancode').textContent = trancode;
 document.getElementById('sidebar-cr-before').textContent = crBefore;
 document.getElementById('sidebar-cr-after').textContent = crAfter;
 document.getElementById('banner-cr-b').textContent = crBefore;
@@ -870,7 +881,7 @@ wA.addEventListener('scroll', ()=>{
 '''
 
 
-def render_diff_html(diff_rows, stats_b, stats_a, out_path, w_b, w_a, cr_before, cr_after):
+def render_diff_html(diff_rows, stats_b, stats_a, out_path, w_b, w_a, cr_before, cr_after, trancode):
     data = {
         'diff_rows': diff_rows,
         'stats_before': stats_b,
@@ -878,24 +889,47 @@ def render_diff_html(diff_rows, stats_b, stats_a, out_path, w_b, w_a, cr_before,
         'width_before': w_b,
         'width_after': w_a,
         'cr_before': cr_before,
-        'cr_after': cr_after
+        'cr_after': cr_after,
+        'trancode': trancode
     }
     payload = json.dumps(data, separators=(',', ':'))
-    out = HTML_DIFF_TEMPLATE.replace('__DIFF_DATA_JSON__', payload)
+    out = (HTML_DIFF_TEMPLATE.replace('__DIFF_DATA_JSON__', payload)
+                             .replace('__TRANCODE__', html.escape(str(trancode)))
+                             .replace('__CR_BEFORE__', html.escape(str(cr_before)))
+                             .replace('__CR_AFTER__', html.escape(str(cr_after))))
     with open(out_path, 'w', encoding='utf-8') as f:
         f.write(out)
 
 
 def compare_traces(path_before, path_after, out_path=None, cr_before="CR-BASE", cr_after="CR-TARGET"):
-    """Core comparative function with explicit CR identifier registration."""
-    _, _, _, stats_b, graph_b = parse_stream(path_before, progress=False)
-    _, _, _, stats_a, graph_a = parse_stream(path_after, progress=False)
+    """Core comparative function with standardized custom file naming."""
+    _, header_b, _, stats_b, graph_b = parse_stream(path_before, progress=False)
+    _, header_a, _, stats_a, graph_a = parse_stream(path_after, progress=False)
 
     diff_rows, w_b, w_a = compute_comparative_diff(graph_b, graph_a)
 
-    out_file = out_path or (path_after + '.trandiff.html')
-    render_diff_html(diff_rows, stats_b, stats_a, out_file, w_b, w_a, cr_before, cr_after)
-    return out_file, stats_b, stats_a
+    # Determine trancode identifier
+    trancode = header_a.get('trancode') or header_b.get('trancode')
+    if not trancode:
+        base_name = os.path.basename(path_after)
+        m = re.search(r'(\d{5,8})', base_name)
+        trancode = m.group(1) if m else "TRANCODE"
+
+    # Sanitize naming tokens
+    safe_cr_b = re.sub(r'[^\w.-]', '_', str(cr_before).strip())
+    safe_cr_a = re.sub(r'[^\w.-]', '_', str(cr_after).strip())
+    safe_txn  = re.sub(r'[^\w.-]', '_', str(trancode).strip())
+
+    if not out_path:
+        out_dir = os.path.dirname(os.path.abspath(path_after))
+        # Formatted: trancode - CR number (BC) to CR Number (AC).html
+        file_name = f"{safe_txn} - {safe_cr_b} to {safe_cr_a}.html"
+        out_file = os.path.join(out_dir, file_name)
+    else:
+        out_file = out_path
+
+    render_diff_html(diff_rows, stats_b, stats_a, out_file, w_b, w_a, cr_before, cr_after, trancode)
+    return out_file, stats_b, stats_a, trancode
 
 
 def main():
@@ -908,8 +942,9 @@ def main():
     args = ap.parse_args()
 
     if args.after:
-        out_html, sb, sa = compare_traces(args.input, args.after, args.output, args.cr_before, args.cr_after)
+        out_html, sb, sa, txn = compare_traces(args.input, args.after, args.output, args.cr_before, args.cr_after)
         print(f"Comparison report generated: {out_html}")
+        print(f"Transaction: {txn}")
         print(f"CRs: {args.cr_before} -> {args.cr_after}")
         print(f"Paragraphs: Before={sb['steps']} | After={sa['steps']} (Delta={sa['steps']-sb['steps']})")
         print(f"DB Calls:   Before={sb['db_calls']} | After={sa['db_calls']} (Delta={sa['db_calls']-sb['db_calls']})")
@@ -920,13 +955,11 @@ def main():
 if __name__ == '__main__':
     main()
 
-
-
----------------
+------------------------
 
 #!/usr/bin/env python3
 """
-traceviz_app.py - Desktop GUI for TRANDIFF with CR Number Management.
+traceviz_app.py - Desktop GUI for TRANDIFF with Dynamic Custom Report Naming.
 """
 
 import os
@@ -994,7 +1027,7 @@ class TranDiffApp:
         tk.Label(header, text='TRANDIFF', bg=BG, fg=GREEN, font=(MONO[0], 16, 'bold')).pack(side='left')
         tk.Label(header, text='  //  CR-based regression trace flow analyzer', bg=BG, fg=GRAY, font=MONO).pack(side='left')
 
-        # Row 1: Before Change File & CR Number
+        # Row 1: Before Change File & CR Number (BC)
         row1 = tk.Frame(self.root, bg=BG)
         row1.pack(fill='x', padx=18, pady=4)
         self._label(row1, 'Before Log File:').pack(side='left')
@@ -1003,12 +1036,12 @@ class TranDiffApp:
         e1.pack(side='left', fill='x', expand=True, padx=6, ipady=4)
         self._button(row1, 'Browse…', self._browse_before).pack(side='left', padx=(0, 10))
 
-        self._label(row1, 'CR Number:').pack(side='left')
+        self._label(row1, 'CR Number (BC):').pack(side='left')
         self.cr_before_var = tk.StringVar(value='26040021')
         cr1 = tk.Entry(row1, textvariable=self.cr_before_var, bg=PANEL2, fg=GREEN, width=14, insertbackground=GREEN, font=MONO, relief='flat')
         cr1.pack(side='left', ipady=4)
 
-        # Row 2: After Change File & CR Number
+        # Row 2: After Change File & CR Number (AC)
         row2 = tk.Frame(self.root, bg=BG)
         row2.pack(fill='x', padx=18, pady=4)
         self._label(row2, 'After Log File :').pack(side='left')
@@ -1017,7 +1050,7 @@ class TranDiffApp:
         e2.pack(side='left', fill='x', expand=True, padx=6, ipady=4)
         self._button(row2, 'Browse…', self._browse_after).pack(side='left', padx=(0, 10))
 
-        self._label(row2, 'CR Number:').pack(side='left')
+        self._label(row2, 'CR Number (AC):').pack(side='left')
         self.cr_after_var = tk.StringVar(value='26040022')
         cr2 = tk.Entry(row2, textvariable=self.cr_after_var, bg=PANEL2, fg=GREEN, width=14, insertbackground=GREEN, font=MONO, relief='flat')
         cr2.pack(side='left', ipady=4)
@@ -1049,7 +1082,7 @@ class TranDiffApp:
         self.summary_frame.pack(fill='x', padx=18, pady=(0, 16))
         self.summary_label = self._label(self.summary_frame, '', bg=PANEL, fg=TEXT)
         self.summary_label.pack(side='left', padx=10, pady=8)
-        self.open_report_btn = self._button(self.summary_frame, 'Open TRANDIFF Comparison Flow', self._open_report, state='disabled')
+        self.open_report_btn = self._button(self.summary_frame, 'Open Comparison Flow', self._open_report, state='disabled')
         self.open_report_btn.pack(side='right', padx=6, pady=6)
 
     def _browse_before(self):
@@ -1089,8 +1122,8 @@ class TranDiffApp:
         self.run_btn.configure(state='disabled', text='Analyzing...')
         self.progressbar['value'] = 20
         self.progress_label.configure(text=f'Compiling regression matrix for CR: {cr_b} vs {cr_a}...')
-        self._log(f'Before Log : {path_b}  [CR: {cr_b}]')
-        self._log(f'After Log  : {path_a}  [CR: {cr_a}]')
+        self._log(f'Before Log : {path_b}  [CR (BC): {cr_b}]')
+        self._log(f'After Log  : {path_a}  [CR (AC): {cr_a}]')
 
         self.worker = threading.Thread(target=self._worker_run, args=(path_b, path_a, cr_b, cr_a), daemon=True)
         self.worker.start()
@@ -1098,8 +1131,8 @@ class TranDiffApp:
     def _worker_run(self, path_b, path_a, cr_b, cr_a):
         t0 = time.time()
         try:
-            out_file, stats_b, stats_a = tv.compare_traces(path_b, path_a, cr_before=cr_b, cr_after=cr_a)
-            self.msg_queue.put(('done', out_file, stats_b, stats_a, cr_b, cr_a, time.time() - t0))
+            out_file, stats_b, stats_a, txn = tv.compare_traces(path_b, path_a, cr_before=cr_b, cr_after=cr_a)
+            self.msg_queue.put(('done', out_file, stats_b, stats_a, cr_b, cr_a, txn, time.time() - t0))
         except Exception as e:
             self.msg_queue.put(('error', str(e)))
 
@@ -1109,7 +1142,7 @@ class TranDiffApp:
                 item = self.msg_queue.get_nowait()
                 kind = item[0]
                 if kind == 'done':
-                    _, out_file, sb, sa, cr_b, cr_a, elapsed = item
+                    _, out_file, sb, sa, cr_b, cr_a, txn, elapsed = item
                     self.progressbar['value'] = 100
                     self.run_btn.configure(state='normal', text='▸ Run TRANDIFF Flow Analysis')
                     self.progress_label.configure(text='Analysis complete.')
@@ -1118,14 +1151,16 @@ class TranDiffApp:
                     d_db = sa['db_calls'] - sb['db_calls']
 
                     self._log('')
-                    self._log(f'=== TRANDIFF REGRESSION SUMMARY (CR {cr_b} ➔ CR {cr_a}) ===')
+                    self._log(f'=== TRANDIFF REGRESSION SUMMARY (Trancode: {txn}) ===')
+                    self._log(f'Saved File         : {os.path.basename(out_file)}')
+                    self._log(f"CR Comparison      : {cr_b} (BC) to {cr_a} (AC)")
                     self._log(f"Paragraphs (Steps) : Before={sb['steps']} | After={sa['steps']} (Delta: {'+' if d_steps>=0 else ''}{d_steps})")
                     self._log(f"Database Operations: Before={sb['db_calls']} | After={sa['db_calls']} (Delta: {'+' if d_db>=0 else ''}{d_db})")
                     self._log(f"Module Calls       : Before={sb['modules']} | After={sa['modules']}")
                     self._log(f"Time Taken         : {elapsed:.2f}s")
                     self._log(f"Report Location    : {out_file}")
 
-                    summary = f"CR: {cr_b} ➔ {cr_a} | Δ Steps: {'+' if d_steps>=0 else ''}{d_steps} | Δ DB Operations: {'+' if d_db>=0 else ''}{d_db}"
+                    summary = f"File: {os.path.basename(out_file)} | Δ Steps: {'+' if d_steps>=0 else ''}{d_steps} | Δ DB: {'+' if d_db>=0 else ''}{d_db}"
                     self.summary_label.configure(text=summary, fg=GREEN)
                     self.result = out_file
                     self.open_report_btn.configure(state='normal')
