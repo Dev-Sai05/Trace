@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 trandiff.py - TRANDIFF: Transaction Trace Regression & Flow Diff Analyzer.
-Comparative Trace Execution Flow with CR Tracking, Auto-Naming, and Step Diff Navigator.
+Comparative Trace Execution Flow with Professional Top Navigation & CR Tracking.
 """
 
 import argparse
@@ -409,110 +409,171 @@ def compute_comparative_diff(graph_before, graph_after, box_w=240, indent_w=70):
 
 
 # ---------------------------------------------------------------------------
-# HTML Presentation Engine (TRANDIFF with Difference Navigator)
+# HTML Presentation Engine (Redesigned Executive Toolbar Layout)
 # ---------------------------------------------------------------------------
 HTML_DIFF_TEMPLATE = r'''<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><title>TRANDIFF // __TRANCODE__ - __CR_BEFORE__ to __CR_AFTER__</title>
 <style>
-:root{--bg:#080b08;--panel:#0e140f;--panel2:#101a12;--line:#1c2b1e;--green:#4dff88;--green-dim:#7fb894;
---cyan:#6fd7e8;--amber:#ffb347;--red:#ff3b3b;--gray:#5c6b60;--text:#c9e6d2;}
+:root{
+  --bg:#090d0a;--panel:#111713;--panel2:#162019;--line:#223126;
+  --green:#3ddc84;--green-dim:#7da68d;--cyan:#62d2e4;
+  --amber:#f5a623;--red:#ff4d4d;--gray:#6f8376;--text:#d2e5d9;
+}
 *{box-sizing:border-box;}
-html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospace,"SF Mono",monospace;font-size:12.5px;height:100vh;}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,ui-monospace,"SF Mono",monospace;font-size:12px;height:100vh;}
 .wrap{display:flex;height:100vh;overflow:hidden;}
 
 /* Sidebar */
-.sidebar{width:320px;flex:0 0 320px;background:var(--panel);border-right:1px solid var(--line);padding:18px;display:flex;flex-direction:column;overflow-y:auto;}
-.brand .t1{font-size:11px;letter-spacing:3px;color:var(--gray);text-transform:uppercase;}
-.brand .t2{font-size:20px;color:var(--green);font-weight:700;margin-bottom:14px;letter-spacing:1.5px;}
-.cr-box{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:4px;padding:8px 12px;margin-bottom:12px;}
-.cr-title{font-size:10px;text-transform:uppercase;color:var(--gray);letter-spacing:1px;}
-.cr-val{font-size:13px;font-weight:700;color:var(--text);margin-top:2px;}
+.sidebar{width:300px;flex:0 0 300px;background:var(--panel);border-right:1px solid var(--line);padding:16px;display:flex;flex-direction:column;overflow-y:auto;}
+.brand .t1{font-size:10px;letter-spacing:2px;color:var(--gray);text-transform:uppercase;}
+.brand .t2{font-size:18px;color:var(--green);font-weight:800;margin-bottom:12px;letter-spacing:1px;}
+.cr-box{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:4px;padding:7px 10px;margin-bottom:10px;}
+.cr-title{font-size:9.5px;text-transform:uppercase;color:var(--gray);letter-spacing:.8px;}
+.cr-val{font-size:12.5px;font-weight:700;color:var(--text);margin-top:2px;font-family:ui-monospace,monospace;}
 
-.diff-card{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px;cursor:pointer;transition:border-color .15s;}
+.diff-card{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:10px;margin-bottom:10px;cursor:pointer;transition:border-color .15s;}
 .diff-card:hover{border-color:var(--green);}
-.diff-card h4{margin:0 0 8px;font-size:11px;text-transform:uppercase;color:var(--cyan);letter-spacing:1px;display:flex;justify-content:space-between;}
-.metric-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--line);font-size:11px;}
-.metric-row .val{font-weight:700;}
+.diff-card h4{margin:0 0 6px;font-size:10.5px;text-transform:uppercase;color:var(--cyan);letter-spacing:.8px;display:flex;justify-content:space-between;}
+.metric-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed var(--line);font-size:11px;}
+.metric-row .val{font-weight:700;font-family:ui-monospace,monospace;}
 .delta-pos{color:var(--green);}
 .delta-neg{color:var(--red);}
 
-/* Main Body */
+/* Main Body & Professional Top Header */
 .main{flex:1;display:flex;flex-direction:column;height:100vh;min-width:0;background:var(--bg);}
-.top-header{padding:10px 24px;border-bottom:1px solid var(--line);background:var(--panel);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:12px;}
-.cr-banner{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;}
-.cr-pill{padding:3px 8px;border-radius:4px;background:var(--panel2);border:1px solid var(--line);color:var(--cyan);}
-.filter-bar{display:flex;gap:6px;align-items:center;}
-.filter-btn{background:var(--panel2);color:var(--gray);border:1px solid var(--line);border-radius:4px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:inherit;text-transform:uppercase;}
-.filter-btn:hover{border-color:var(--green);color:var(--text);}
-.filter-btn.active{background:var(--panel);border-color:var(--green);color:var(--green);font-weight:700;}
-.filter-btn.active-diff{background:rgba(255,59,59,0.12);border-color:var(--red);color:var(--red);font-weight:700;}
+.top-header{
+  padding:8px 18px;
+  background:var(--panel);
+  border-bottom:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-shrink:0;
+  box-shadow:0 1px 4px rgba(0,0,0,0.4);
+}
+.header-left, .header-center, .header-right{display:flex;align-items:center;gap:8px;}
 
-/* Diff Navigation Controls */
-.nav-group{display:flex;align-items:center;gap:6px;background:var(--panel2);padding:3px 6px;border-radius:5px;border:1px solid var(--line);}
-.nav-btn{background:var(--panel);color:var(--green);border:1px solid var(--line);border-radius:4px;padding:4px 9px;cursor:pointer;font-size:11px;font-weight:700;}
-.nav-btn:hover{border-color:var(--green);background:rgba(77,255,136,0.08);}
-.nav-counter{font-size:11px;color:var(--gray);padding:0 4px;font-weight:700;}
+/* Segmented Toolbars & Pill Groups */
+.segmented-group{
+  display:inline-flex;
+  background:var(--panel2);
+  border:1px solid var(--line);
+  border-radius:5px;
+  padding:2px;
+  align-items:center;
+}
+.seg-btn{
+  background:transparent;
+  color:var(--gray);
+  border:none;
+  padding:4px 10px;
+  font-size:11px;
+  font-weight:600;
+  cursor:pointer;
+  border-radius:3px;
+  transition:all .15s ease;
+  font-family:inherit;
+}
+.seg-btn:hover{color:var(--text);background:rgba(255,255,255,0.04);}
+.seg-btn.active{background:var(--panel);color:var(--green);font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,0.5);}
+.seg-btn.active-diff{background:rgba(255,77,77,0.15);color:var(--red);font-weight:700;}
 
-.ctrl-btn{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:5px 10px;cursor:pointer;font-size:11px;}
-.ctrl-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+/* Navigator Cluster */
+.nav-cluster{display:flex;align-items:center;gap:3px;}
+.nav-cluster .nav-btn{
+  background:var(--panel2);
+  border:1px solid var(--line);
+  color:var(--text);
+  padding:4px 9px;
+  border-radius:4px;
+  font-size:11px;
+  font-weight:600;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+}
+.nav-cluster .nav-btn:hover{border-color:var(--green);color:var(--green);}
+.nav-indicator{
+  background:var(--panel2);
+  border:1px solid var(--line);
+  padding:4px 8px;
+  font-size:10.5px;
+  font-weight:700;
+  color:var(--cyan);
+  border-radius:4px;
+  font-family:ui-monospace,monospace;
+}
 
-.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;}
-.lg-item{display:flex;align-items:center;gap:6px;}
-.lg-box{width:12px;height:12px;border-radius:2px;}
+/* Metadata Chips */
+.meta-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 8px;
+  background:var(--panel2);
+  border:1px solid var(--line);
+  border-radius:4px;
+  font-size:11px;
+  font-family:ui-monospace,monospace;
+}
+.meta-chip .lbl{color:var(--gray);font-weight:600;font-size:9.5px;text-transform:uppercase;}
+.meta-chip .val{font-weight:700;}
+
+/* Compact Legend */
+.legend-compact{display:flex;align-items:center;gap:10px;font-size:10.5px;color:var(--gray);border-left:1px solid var(--line);padding-left:10px;}
+.legend-compact .dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;}
 
 /* Dual Vertical Flow Diagrams */
 .diagram-columns{display:flex;flex:1;min-height:0;overflow:hidden;background:#050705;}
 .diagram-column{flex:1;display:flex;flex-direction:column;border-right:1px solid var(--line);min-width:0;}
 .diagram-column:last-child{border-right:none;}
-.column-title{padding:10px 16px;background:var(--panel2);border-bottom:1px solid var(--line);font-weight:700;font-size:12px;letter-spacing:1px;color:var(--cyan);display:flex;justify-content:space-between;}
+.column-title{padding:8px 14px;background:var(--panel2);border-bottom:1px solid var(--line);font-weight:700;font-size:11px;letter-spacing:.8px;color:var(--cyan);display:flex;justify-content:space-between;}
 .canvas-wrap{flex:1;overflow-y:scroll;overflow-x:auto;position:relative;background:radial-gradient(rgba(255,255,255,0.02) 1px, transparent 1px);background-size:20px 20px;}
 .flow-canvas{position:absolute;top:0;left:0;}
 .connectors{position:absolute;top:0;left:0;pointer-events:none;overflow:visible;}
 
 /* Box Nodes */
-.flowbox{position:absolute;border:1.5px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer;background:var(--panel2);display:flex;align-items:center;gap:8px;box-sizing:border-box;box-shadow:0 2px 5px rgba(0,0,0,0.5);transition:top .15s;}
+.flowbox{position:absolute;border:1.5px solid var(--line);border-radius:5px;padding:6px 9px;cursor:pointer;background:var(--panel2);display:flex;align-items:center;gap:6px;box-sizing:border-box;box-shadow:0 2px 4px rgba(0,0,0,0.5);transition:top .15s;}
 .flowbox:hover{box-shadow:0 0 0 2px var(--green);z-index:10;}
-.flowbox .lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;}
+.flowbox .lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-family:ui-monospace,monospace;}
 
-/* Distinct Highlights for Calls, Steps, and DB */
-.flowbox.is-db{border-color:var(--green);background:rgba(77,255,136,0.06);color:var(--green);}
-.flowbox.is-para{border-color:var(--cyan);background:rgba(111,215,232,0.05);color:var(--cyan);}
-.flowbox.is-module{border-color:#b48df0;background:rgba(180,141,240,0.08);color:#d9c5f8;}
-.flowbox.is-err{border-color:var(--red);background:rgba(255,59,59,0.12);color:var(--red);box-shadow:0 0 8px rgba(255,59,59,0.3);}
+.flowbox.is-db{border-color:rgba(61,220,132,0.6);background:rgba(61,220,132,0.06);color:var(--green);}
+.flowbox.is-para{border-color:rgba(98,210,228,0.5);background:rgba(98,210,228,0.04);color:var(--cyan);}
+.flowbox.is-module{border-color:rgba(180,141,240,0.6);background:rgba(180,141,240,0.06);color:#d9c5f8;}
+.flowbox.is-err{border-color:var(--red);background:rgba(255,77,77,0.12);color:var(--red);box-shadow:0 0 8px rgba(255,77,77,0.3);}
 
 /* DIFFERENCE HIGHLIGHTING: PURE RED */
 .diff-highlight{
   border:2px solid var(--red) !important;
-  background:rgba(255,59,59,0.12) !important;
+  background:rgba(255,77,77,0.14) !important;
   color:#ff9e9e !important;
-  box-shadow:0 0 10px rgba(255,59,59,0.45) !important;
+  box-shadow:0 0 8px rgba(255,77,77,0.4) !important;
 }
 .diff-removed{border-style:dashed !important;}
 
-/* Active Spotlight on Focused Difference */
+/* Active Spotlight */
 @keyframes diffPulse {
   0% { box-shadow: 0 0 0 2px #fff, 0 0 16px var(--red); }
-  50% { box-shadow: 0 0 0 4px var(--red), 0 0 28px #ff7b7b; }
+  50% { box-shadow: 0 0 0 4px var(--red), 0 0 24px #ff7b7b; }
   100% { box-shadow: 0 0 0 2px #fff, 0 0 16px var(--red); }
 }
-.diff-spotlight{
-  animation: diffPulse 1.4s infinite ease-in-out !important;
-  z-index: 25 !important;
-}
+.diff-spotlight{animation: diffPulse 1.4s infinite ease-in-out !important;z-index: 25 !important;}
 
-.badge-tag{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700;flex-shrink:0;}
-.badge-db{background:rgba(77,255,136,0.2);color:var(--green);border:1px solid var(--green);}
-.badge-para{background:rgba(111,215,232,0.2);color:var(--cyan);border:1px solid var(--cyan);}
-.badge-call{background:rgba(180,141,240,0.2);color:#d9c5f8;border:1px solid #b48df0;}
-.badge-diff{background:rgba(255,59,59,0.3);color:var(--red);border:1px solid var(--red);}
+.badge-tag{font-size:8.5px;padding:1px 4px;border-radius:2px;font-weight:700;flex-shrink:0;}
+.badge-db{background:rgba(61,220,132,0.15);color:var(--green);border:1px solid var(--green);}
+.badge-para{background:rgba(98,210,228,0.15);color:var(--cyan);border:1px solid var(--cyan);}
+.badge-call{background:rgba(180,141,240,0.15);color:#d9c5f8;border:1px solid #b48df0;}
+.badge-diff{background:rgba(255,77,77,0.25);color:var(--red);border:1px solid var(--red);}
 
-.panel-footer-tcs{padding:10px 14px;background:var(--panel2);border-top:1px solid var(--line);font-size:10px;color:var(--gray);text-align:center;letter-spacing:1px;font-weight:600;text-transform:uppercase;margin-top:auto;}
+.panel-footer-tcs{padding:8px 12px;background:var(--panel2);border-top:1px solid var(--line);font-size:9.5px;color:var(--gray);text-align:center;letter-spacing:1px;font-weight:600;text-transform:uppercase;margin-top:auto;}
 .panel-footer-tcs span{color:var(--green);font-weight:700;}
 
 /* Drawer Inspector */
-.drawer{height:160px;background:var(--panel);border-top:1px solid var(--line);padding:14px 24px;overflow-y:auto;flex-shrink:0;}
-.drawer h4{margin:0 0 6px;color:var(--green);font-size:11px;letter-spacing:1px;text-transform:uppercase;}
-.drawer-content{color:var(--green-dim);font-size:11.5px;white-space:pre-wrap;word-break:break-all;}
+.drawer{height:140px;background:var(--panel);border-top:1px solid var(--line);padding:10px 18px;overflow-y:auto;flex-shrink:0;}
+.drawer h4{margin:0 0 4px;color:var(--green);font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;}
+.drawer-content{color:var(--green-dim);font-size:11px;white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,monospace;}
 </style></head>
 <body>
 <div class="wrap">
@@ -559,50 +620,59 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospa
   </div>
 
   <div class="main">
+    <!-- Redesigned Top Header -->
     <div class="top-header">
-      <div class="cr-banner">
-        <span style="color:var(--green-dim);margin-right:4px;">TRANCODE:</span>
-        <span class="cr-pill" style="border-color:var(--cyan);color:var(--cyan);" id="banner-trancode">TRAN</span>
-        <span style="margin:0 6px;color:var(--gray);">|</span>
-        <span>CR:</span>
-        <span class="cr-pill" id="banner-cr-b">CR-BASE</span>
-        <span style="color:var(--gray);">➔</span>
-        <span class="cr-pill" id="banner-cr-a" style="border-color:var(--green);color:var(--green);">CR-TARGET</span>
+      <div class="header-left">
+        <div class="meta-chip">
+          <span class="lbl">TXN</span>
+          <span class="val" id="banner-trancode" style="color:var(--cyan);">--</span>
+        </div>
+        <div class="meta-chip">
+          <span class="lbl">CR PATH</span>
+          <span class="val" id="banner-cr-b">BC</span>
+          <span style="color:var(--gray);">➔</span>
+          <span class="val" id="banner-cr-a" style="color:var(--green);">AC</span>
+        </div>
       </div>
 
-      <!-- Diff Step Navigator -->
-      <div class="nav-group">
-        <button class="nav-btn" onclick="prevDiff()" title="Previous Difference (Shortcut: K or P)">▲ Prev Diff</button>
-        <span class="nav-counter" id="diffNavLabel">Diff: 0 / 0</span>
-        <button class="nav-btn" onclick="nextDiff()" title="Next Difference (Shortcut: J or N)">▼ Next Diff</button>
+      <div class="header-center">
+        <!-- Diff Navigator -->
+        <div class="nav-cluster">
+          <button class="nav-btn" onclick="prevDiff()" title="Previous Difference (Shortcut: K or P)">▲ Prev</button>
+          <span class="nav-indicator" id="diffNavLabel">0 / 0</span>
+          <button class="nav-btn" onclick="nextDiff()" title="Next Difference (Shortcut: J or N)">▼ Next</button>
+        </div>
+
+        <!-- Segmented Filter Bar -->
+        <div class="segmented-group">
+          <button class="seg-btn active" id="f-all" onclick="setFilter('all')">All</button>
+          <button class="seg-btn" id="f-diff" onclick="setFilter('diff')">Differences</button>
+          <button class="seg-btn" id="f-db" onclick="setFilter('db')">Database</button>
+          <button class="seg-btn" id="f-para" onclick="setFilter('para')">Paragraphs</button>
+          <button class="seg-btn" id="f-module" onclick="setFilter('module')">Modules</button>
+        </div>
+
+        <!-- Tree Expansion Group -->
+        <div class="segmented-group">
+          <button class="seg-btn" onclick="toggleAllModules(false)">Expand All</button>
+          <button class="seg-btn" onclick="toggleAllModules(true)">Collapse All</button>
+        </div>
       </div>
 
-      <div class="filter-bar">
-        <span style="font-weight:700;color:var(--gray);margin-right:4px;">VIEW LENS:</span>
-        <button class="filter-btn active" id="f-all" onclick="setFilter('all')">All Steps</button>
-        <button class="filter-btn" id="f-diff" onclick="setFilter('diff')">Only Differences</button>
-        <button class="filter-btn" id="f-db" onclick="setFilter('db')">Only Database</button>
-        <button class="filter-btn" id="f-para" onclick="setFilter('para')">Only Paragraphs</button>
-        <button class="filter-btn" id="f-module" onclick="setFilter('module')">Only Modules</button>
-      </div>
-
-      <div style="display:flex;gap:6px;">
-        <button class="ctrl-btn" onclick="toggleAllModules(false)">Expand All</button>
-        <button class="ctrl-btn" onclick="toggleAllModules(true)">Collapse All</button>
-      </div>
-
-      <div class="legend">
-        <div class="lg-item"><span class="badge-tag badge-diff">DIFF</span> Red Delta</div>
-        <div class="lg-item"><span class="badge-tag badge-db">DB</span> Database Call</div>
-        <div class="lg-item"><span class="badge-tag badge-para">PARA</span> Paragraph</div>
-        <div class="lg-item"><span class="badge-tag badge-call">CALL</span> Module</div>
+      <div class="header-right">
+        <div class="legend-compact">
+          <span><i class="dot" style="background:var(--red);"></i>Diff</span>
+          <span><i class="dot" style="background:var(--green);"></i>DB</span>
+          <span><i class="dot" style="background:var(--cyan);"></i>Para</span>
+          <span><i class="dot" style="background:#b48df0;"></i>Module</span>
+        </div>
       </div>
     </div>
 
     <div class="diagram-columns">
       <!-- Left Column: Before -->
       <div class="diagram-column">
-        <div class="column-title"><span id="col-title-b">BEFORE CHANGE</span><span id="title-b-count" style="color:var(--gray);"></span></div>
+        <div class="column-title"><span id="col-title-b">BEFORE CHANGE</span><span id="title-b-count" style="color:var(--gray);font-family:ui-monospace,monospace;"></span></div>
         <div class="canvas-wrap" id="wrapBefore">
           <div class="flow-canvas" id="canvasBefore">
             <svg class="connectors" id="svgBefore"></svg>
@@ -612,7 +682,7 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospa
 
       <!-- Right Column: After -->
       <div class="diagram-column">
-        <div class="column-title"><span id="col-title-a">AFTER CHANGE</span><span id="title-a-count" style="color:var(--gray);"></span></div>
+        <div class="column-title"><span id="col-title-a">AFTER CHANGE</span><span id="title-a-count" style="color:var(--gray);font-family:ui-monospace,monospace;"></span></div>
         <div class="canvas-wrap" id="wrapAfter">
           <div class="flow-canvas" id="canvasAfter">
             <svg class="connectors" id="svgAfter"></svg>
@@ -623,7 +693,7 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospa
 
     <div class="drawer">
       <h4>Execution Inspector</h4>
-      <div class="drawer-content" id="drawerBody">Hover over or jump to any block using Next/Prev Diff to inspect its log line details and SQL return context.</div>
+      <div class="drawer-content" id="drawerBody">Select any block or click Next/Prev to inspect execution parameters.</div>
     </div>
   </div>
 </div>
@@ -649,8 +719,8 @@ document.getElementById('sidebar-cr-before').textContent = crBefore;
 document.getElementById('sidebar-cr-after').textContent = crAfter;
 document.getElementById('banner-cr-b').textContent = crBefore;
 document.getElementById('banner-cr-a').textContent = crAfter;
-document.getElementById('col-title-b').textContent = `BEFORE CODE CHANGE [${crBefore}]`;
-document.getElementById('col-title-a').textContent = `AFTER CODE CHANGE [${crAfter}]`;
+document.getElementById('col-title-b').textContent = `BEFORE CHANGE [${crBefore}]`;
+document.getElementById('col-title-a').textContent = `AFTER CHANGE [${crAfter}]`;
 
 // Summary Metrics
 const sb = DIFF_DATA.stats_before;
@@ -679,7 +749,7 @@ document.getElementById('m-diff-count').textContent = `${diffsOnly} Steps Change
 
 function setFilter(f){
   currentFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => {
+  document.querySelectorAll('.seg-btn').forEach(b => {
     b.classList.remove('active');
     b.classList.remove('active-diff');
   });
@@ -731,13 +801,13 @@ function inspect(node, side){
   const el = document.getElementById('drawerBody');
   if(!node){ el.textContent = 'None'; return; }
   const activeCr = (side === 'before') ? crBefore : crAfter;
-  let msg = `[CR: ${activeCr}] Line: ${node.first_line}\nType: ${node.kind.toUpperCase()}\nLabel: ${node.label}\nDepth: Lvl ${node.depth}\n`;
+  let msg = `[CR: ${activeCr}] Line: ${node.first_line} | Type: ${node.kind.toUpperCase()} | Label: ${node.label} | Depth: Lvl ${node.depth}\n`;
   if(node.diff_status && node.diff_status !== 'MATCH') {
-    msg += `Difference State: ${node.diff_status} (Highlighted in RED)\n`;
+    msg += `Difference Status: ${node.diff_status} (RED)\n`;
   }
-  if(node.is_db) msg += `Database Operation: YES\n`;
+  if(node.is_db) msg += `Database Call: YES\n`;
   if(node.messages && node.messages.length) {
-    msg += `Log Statement: ${node.messages.map(m=>m[0]).join('\n')}\n`;
+    msg += `Context: ${node.messages.map(m=>m[0]).join('\n')}\n`;
   }
   el.textContent = msg;
 }
@@ -782,7 +852,7 @@ function buildBox(node, side, status, yPos, diffIndex){
   let collapseIcon = '';
   if(node.kind === 'module'){
     const isCol = collapsedModules.has(`${side}_${node.key}`);
-    collapseIcon = `<span style="font-size:10px;margin-right:4px;">${isCol ? '▸' : '▾'}</span>`;
+    collapseIcon = `<span style="font-size:9px;margin-right:4px;">${isCol ? '▸' : '▾'}</span>`;
   }
 
   box.innerHTML = `${badge}${collapseIcon}<span class="lbl">${esc(node.label)}</span>`;
@@ -874,14 +944,14 @@ function drawLines(nodes, svgId, width, totalH){
   
   const defs = document.createElementNS(NS, 'defs');
   defs.innerHTML = `<marker id="arr-norm-${svgId}" markerWidth="8" markerHeight="8" refX="5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#5b7a63"/></marker>` +
-                   `<marker id="arr-diff-${svgId}" markerWidth="8" markerHeight="8" refX="5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ff3b3b"/></marker>`;
+                   `<marker id="arr-diff-${svgId}" markerWidth="8" markerHeight="8" refX="5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ff4d4d"/></marker>`;
   svg.appendChild(defs);
 
   for(let i=0; i<nodes.length-1; i++){
     const a = nodes[i];
     const b = nodes[i+1];
     const isDiff = (a.diff_status && a.diff_status !== 'MATCH') || (b.diff_status && b.diff_status !== 'MATCH');
-    const color = isDiff ? '#ff3b3b' : '#5b7a63';
+    const color = isDiff ? '#ff4d4d' : '#5b7a63';
     const marker = isDiff ? `url(#arr-diff-${svgId})` : `url(#arr-norm-${svgId})`;
 
     const path = document.createElementNS(NS, 'path');
@@ -900,18 +970,16 @@ function drawLines(nodes, svgId, width, totalH){
   }
 }
 
-// ---------------------------------------------------------------------------
-// Next / Previous Difference Navigator Logic
-// ---------------------------------------------------------------------------
+// Diff Navigator Functions
 function updateDiffNavUI(){
   const label = document.getElementById('diffNavLabel');
   const total = activeDiffIndices.length;
   if(total === 0){
-    label.textContent = 'Diff: 0 / 0';
+    label.textContent = '0 / 0';
     currentDiffPointer = -1;
   } else {
     const displayIdx = currentDiffPointer >= 0 ? (currentDiffPointer + 1) : 0;
-    label.textContent = `Diff: ${displayIdx} / ${total}`;
+    label.textContent = `${displayIdx} / ${total}`;
   }
 }
 
@@ -927,7 +995,6 @@ function jumpToDiff(index){
   const wB = document.getElementById('wrapBefore');
   const wA = document.getElementById('wrapAfter');
   
-  // Calculate vertical center offset
   const viewH = wB.clientHeight;
   const scrollTarget = Math.max(0, target.y - viewH / 2 + BOX_H / 2);
 
@@ -945,7 +1012,6 @@ function jumpToDiff(index){
     if(elA) elA.classList.add('diff-spotlight');
   }
 
-  // Update inspection drawer with active difference details
   if(target.after) inspect(target.after, 'after');
   else if(target.before) inspect(target.before, 'before');
 
@@ -955,18 +1021,18 @@ function jumpToDiff(index){
 function nextDiff(){
   if(activeDiffIndices.length === 0) return;
   let nextIdx = currentDiffPointer + 1;
-  if(nextIdx >= activeDiffIndices.length) nextIdx = 0; // Wrap around to first difference
+  if(nextIdx >= activeDiffIndices.length) nextIdx = 0;
   jumpToDiff(nextIdx);
 }
 
 function prevDiff(){
   if(activeDiffIndices.length === 0) return;
   let prevIdx = currentDiffPointer - 1;
-  if(prevIdx < 0) prevIdx = activeDiffIndices.length - 1; // Wrap around to last difference
+  if(prevIdx < 0) prevIdx = activeDiffIndices.length - 1;
   jumpToDiff(prevIdx);
 }
 
-// Keyboard navigation: J/N for Next, K/P for Prev
+// Shortcuts
 window.addEventListener('keydown', (e)=>{
   if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if(e.key === 'j' || e.key === 'J' || e.key === 'n' || e.key === 'N'){
